@@ -14,4 +14,10 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
+    <style name="SwitchStyle" parent="Theme.AppCompat.Light">
+        <item name="colorControlActivated">@color/lime_green</item>
+        <item name="colorSwitchThumbNormal">@color/deep_sky_blue</item>
+        <item name="android:colorForeground">@color/deep_sky_blue</item>
+    </style>
+
 </resources>
