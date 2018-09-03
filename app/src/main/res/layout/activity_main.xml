@@ -47,12 +47,13 @@
         app:layout_constraintBottom_toTopOf="@id/ly_bottom"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/ly_left"
-        app:layout_constraintTop_toBottomOf="@id/ly_top">
+        app:layout_constraintTop_toBottomOf="@id/ly_top"
+        app:layout_constraintVertical_bias="0.0">
 
         <RelativeLayout
             android:id="@+id/ly_time"
             android:layout_width="match_parent"
-            android:layout_height="240dp"
+            android:layout_height="210dp"
             android:layout_alignParentTop="true"
             android:padding="5dp">
 
@@ -78,9 +79,9 @@
             <TextView
                 android:id="@+id/time_txt_explore"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="30dp"
                 android:layout_below="@+id/time_lbl_explore"
-                android:text="time_txt_explore" />
+                android:text="0:00:000" />
 
             <TextView
                 android:id="@+id/time_lbl_fast"
@@ -94,15 +95,15 @@
             <TextView
                 android:id="@+id/time_txt_fast"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
+                android:layout_height="30dp"
                 android:layout_below="@+id/time_lbl_fast"
-                android:text="time_txt_fast" />
+                android:text="0:00:000" />
 
             <android.support.v7.widget.SwitchCompat
                 android:id="@+id/time_swt_isfast"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:layout_above="@+id/time_btn_timer"
+                android:layout_above="@+id/time_btn_stopwatch"
                 android:switchTextAppearance="@android:style/TextAppearance.DeviceDefault.Small"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
                 android:textColor="@color/dim_gray"
@@ -110,26 +111,26 @@
                 android:theme="@style/SwitchStyle" />
 
             <Button
-                android:id="@+id/time_btn_timer"
+                android:id="@+id/time_btn_stopwatch"
                 android:layout_width="70dp"
                 android:layout_height="40dp"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
                 android:text="Start"
                 android:textAllCaps="true"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-                android:textSize="15dp" />
+                android:textSize="14sp" />
 
             <Button
                 android:id="@+id/time_btn_reset"
                 android:layout_width="70dp"
                 android:layout_height="40dp"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
                 android:text="Reset"
                 android:textAllCaps="true"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-                android:textSize="15dp" />
+                android:textSize="14sp" />
 
         </RelativeLayout>
 
@@ -162,13 +163,13 @@
             <EditText
                 android:id="@+id/point_txt_x"
                 android:layout_width="50dp"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_below="@id/point_lbl_header"
                 android:layout_toEndOf="@+id/point_lbl_x"
                 android:inputType="number"
                 android:maxLength="2"
                 android:textAlignment="center"
-                android:textSize="15dp" />
+                android:textSize="14sp" />
 
             <TextView
                 android:id="@+id/point_lbl_y"
@@ -182,43 +183,94 @@
             <EditText
                 android:id="@+id/point_txt_y"
                 android:layout_width="50dp"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_alignParentEnd="true"
                 android:layout_below="@id/point_lbl_header"
                 android:gravity="bottom"
                 android:inputType="number"
                 android:maxLength="2"
                 android:textAlignment="center"
-                android:textSize="15dp" />
+                android:textSize="14sp" />
 
             <Button
-                android:id="@+id/point_btn_start"
+                android:id="@+id/point_btn_origin"
                 android:layout_width="70dp"
                 android:layout_height="40dp"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentLeft="true"
-                android:text="Start"
+                android:layout_alignParentStart="true"
+                android:text="Origin"
                 android:textAllCaps="true"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-                android:textSize="15dp" />
+                android:textSize="14sp" />
 
             <Button
                 android:id="@+id/point_btn_way"
                 android:layout_width="70dp"
                 android:layout_height="40dp"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
                 android:text="Way"
                 android:textAllCaps="true"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-                android:textSize="15dp" />
+                android:textSize="14sp" />
         </RelativeLayout>
 
         <RelativeLayout
-            android:id="@+id/ly_update"
+            android:id="@+id/ly_config"
             android:layout_width="match_parent"
             android:layout_height="120dp"
             android:layout_below="@+id/ly_point"
+            android:padding="5dp">
+
+            <TextView
+                android:id="@+id/config_lbl_header"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_alignParentTop="true"
+                android:gravity="bottom|center_horizontal"
+                android:text="Configurations"
+                android:textAllCaps="true"
+                android:textColor="@color/colorAccent" />
+
+            <Button
+                android:id="@+id/config_btn_f1"
+                android:layout_width="70dp"
+                android:layout_height="40dp"
+                android:layout_alignParentStart="true"
+                android:layout_below="@id/config_lbl_header"
+                android:text="F1"
+                android:textAllCaps="true"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/config_btn_f2"
+                android:layout_width="70dp"
+                android:layout_height="40dp"
+                android:layout_alignParentEnd="true"
+                android:layout_below="@id/config_lbl_header"
+                android:text="F2"
+                android:textAllCaps="true"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/config_btn_reconfig"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_alignParentBottom="true"
+                android:layout_alignParentStart="true"
+                android:text="Reconfigure"
+                android:textAllCaps="true"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
+                android:textSize="14sp" />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:id="@+id/ly_display"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:layout_below="@+id/ly_config"
             android:padding="5dp">
 
             <TextView
@@ -232,7 +284,7 @@
                 android:textColor="@color/colorAccent" />
 
             <android.support.v7.widget.SwitchCompat
-                android:id="@+id/display_swt_isauto"
+                android:id="@+id/display_swt_ismanual"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:layout_below="@+id/display_lbl_header"
@@ -247,13 +299,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentLeft="true"
+                android:layout_alignParentStart="true"
                 android:text="Update"
                 android:textAllCaps="true"
                 android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-                android:textSize="15dp"
+                android:textSize="14sp"
                 android:visibility="invisible" />
         </RelativeLayout>
+
 
     </RelativeLayout>
 
@@ -273,6 +326,7 @@
             android:layout_height="150dp"
             android:background="@drawable/d_box"
             android:columnCount="3"
+
             android:rowCount="3">
 
             <Button
