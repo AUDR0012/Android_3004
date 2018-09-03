@@ -1,6 +1,7 @@
 package android.mdp.android_3004;
 
-import android.graphics.Color;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
@@ -19,34 +20,43 @@ import android.widget.GridLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
 	final int MAZE_C = 15;
 	final int MAZE_R = 20;
-	final int ROBOT_SIZE = 2;
+	final int ROBOT_SIZE = 3;
+
 	GridLayout grid_maze;
 	ImageView robot;
 	int robot_location = 0;
+	int way_point = -1;
+	List<Integer> obstacle_list;
 
 	Handler handler;
 	long time_start;
 	TextView time_textview;
+
+	AlertDialog.Builder dialog;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
-		int[] list_color = {Color.RED, Color.MAGENTA, Color.GREEN, Color.CYAN, Color.BLUE}; //TODO: REMOVABLE
+//		========== OTHERS ==========
+		dialog = new AlertDialog.Builder(this);
+		obstacle_list = new ArrayList<Integer>();
 
 //		========== CLICKABLE CONTROLS ==========
 		int[] list_onclick = {R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
-				R.id.time_btn_stopwatch, R.id.time_btn_reset, R.id.time_swt_isfast,
-				R.id.point_btn_origin, R.id.point_btn_way,
-				R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig,
-				R.id.display_swt_ismanual, R.id.display_btn_update};
+			R.id.time_btn_stopwatch, R.id.time_btn_reset, R.id.time_swt_isfast,
+			R.id.point_btn_origin, R.id.point_btn_way,
+			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig,
+			R.id.display_swt_ismanual, R.id.display_btn_update};
 		for (int onclick : list_onclick) {
 			findViewById(onclick).setOnClickListener(this);
 		}
@@ -58,26 +68,28 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		grid_maze.setColumnCount(MAZE_C);
 		grid_maze.setRowCount(MAZE_R);
 
-		Drawable d_box = this.getResources().getDrawable(R.drawable.d_box, null);
-		d_box.setColorFilter(list_color[new Random().nextInt(list_color.length)], PorterDuff.Mode.ADD); //TODO: REMOVABLE
+		Drawable box = create_box(Cell.DEFAULT.getColor());
 		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 			TextView tv = new TextView(this);
 			tv.setGravity(Gravity.CENTER);
-			tv.setBackground(d_box);
-			tv.setText(String.valueOf(i));
+			tv.setBackground(box);
+			tv.setText(String.valueOf(Cell.DEFAULT.get()));
 
 			grid_maze.addView(tv);
 		}
 		robot_create();
+		robot_go();
+
+		create_obstacle();
 
 //		========== STOPWATCH ==========
 		handler = new Handler();
 
 //		========== SET POINTS ==========
-		((EditText) findViewById(R.id.point_txt_x)).setHint(Integer.toString(MAZE_C));
-		((EditText) findViewById(R.id.point_txt_y)).setHint(Integer.toString(MAZE_R));
-		((EditText) findViewById(R.id.point_txt_x)).setFilters(new InputFilterMinMax[]{new InputFilterMinMax("1", Integer.toString(MAZE_C))});
-		((EditText) findViewById(R.id.point_txt_y)).setFilters(new InputFilterMinMax[]{new InputFilterMinMax("1", Integer.toString(MAZE_R))});
+		((EditText) findViewById(R.id.point_txt_x)).setHint(String.valueOf(MAZE_C - 1));
+		((EditText) findViewById(R.id.point_txt_y)).setHint(String.valueOf(MAZE_R - 1));
+		((EditText) findViewById(R.id.point_txt_x)).setFilters(new InputFilterMinMax[]{new InputFilterMinMax("0", String.valueOf(MAZE_C - 1))});
+		((EditText) findViewById(R.id.point_txt_y)).setFilters(new InputFilterMinMax[]{new InputFilterMinMax("0", String.valueOf(MAZE_R - 1))});
 	}
 
 	@Override
@@ -93,13 +105,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 				robot_move();
 				break;
 			case R.id.direction_btn_down:
-				robot_rotate(2);
+				robot_rotate(Direction.DOWN.get());
 				break;
 			case R.id.direction_btn_left:
-				robot_rotate(3);
+				robot_rotate(Direction.LEFT.get());
 				break;
 			case R.id.direction_btn_right:
-				robot_rotate(1);
+				robot_rotate(Direction.RIGHT.get());
 				break;
 
 			//STOPWATCH
@@ -162,48 +174,121 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		}
 	}
 
+	protected void create_dialog(String title, String message) {
+		dialog.setTitle(title);
+		dialog.setMessage(message);
+		dialog.setPositiveButton("Ok", new DialogInterface.OnClickListener() {
+			@Override
+			public void onClick(DialogInterface dialog, int which) {
+				//NOTHING
+			}
+		});
+		dialog.create();
+		dialog.show();
+	}
+
+	protected Drawable create_box(int color) {
+		Drawable box = this.getResources().getDrawable(R.drawable.d_box, null);
+		box.setColorFilter(color, PorterDuff.Mode.OVERLAY);
+		return box;
+	}
+
+	protected int colorof_textview(String id) {
+		for (Cell c : Cell.values()) {
+			if (Integer.valueOf(id) == c.get()) {
+				return c.getColor();
+			}
+		}
+		return -1;
+	}
+
 	protected void robot_create() {
-		int c = MAZE_C - ROBOT_SIZE, r = MAZE_R - ROBOT_SIZE;
+		int col = MAZE_C - ROBOT_SIZE, row = MAZE_R - ROBOT_SIZE;
 
 		Drawable d_robot = this.getResources().getDrawable(R.drawable.d_robot2, null);
 		robot = new ImageView(this);
 		robot.setImageDrawable(d_robot);
 		GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
-		lp.columnSpec = GridLayout.spec(c, ROBOT_SIZE);
-		lp.rowSpec = GridLayout.spec(r, ROBOT_SIZE);
+		lp.columnSpec = GridLayout.spec(col, ROBOT_SIZE);
+		lp.rowSpec = GridLayout.spec(row, ROBOT_SIZE);
 		lp.height = 40 * ROBOT_SIZE;
 		lp.width = 40 * ROBOT_SIZE;
 		robot.setLayoutParams(lp);
 		grid_maze.addView(robot);
-		robot_location = (r * MAZE_C) + c;
+		robot_location = robot_cell(col, row);
 	}
 
 	protected void robot_rotate(int direction) {
 		robot.setRotation(robot.getRotation() + (direction * 90));
 	}
 
-	protected void robot_move() { // 0: UP | 1: RIGHT | 2: DOWN | 3: LEFT
-		int col = robot_location % MAZE_C,
-				row = robot_location / MAZE_C,
-				direction = (((int) robot.getRotation()) % 360) / 90;
+	protected void robot_move() {
+		int temp_location,
+			col = robot_location % MAZE_C,
+			row = robot_location / MAZE_C,
+			direction = (((int) robot.getRotation()) % 360) / 90;
 
-		if ((direction == 0 && row > 0) ||
-				(direction == 1 && col < (MAZE_C - ROBOT_SIZE)) ||
-				(direction == 2 && row < (MAZE_R - ROBOT_SIZE)) ||
-				(direction == 3 && col > 0)) {
+		if ((direction == Direction.UP.get() && row > 0) ||
+			(direction == Direction.RIGHT.get() && col < (MAZE_C - ROBOT_SIZE)) ||
+			(direction == Direction.DOWN.get() && row < (MAZE_R - ROBOT_SIZE)) ||
+			(direction == Direction.LEFT.get() && col > 0)) {
 			int addon = 1;
-			if (direction == 0 || direction == 2) addon = MAZE_C;
-			if (direction == 0 || direction == 3) addon *= -1;
-			robot_location += addon;
-
-			GridLayout.LayoutParams lp = (GridLayout.LayoutParams) robot.getLayoutParams();
-			if (direction == 0 || direction == 2) {
-				lp.rowSpec = GridLayout.spec(row + ((direction == 0) ? -1 : 1), ROBOT_SIZE);
-			} else {
-				lp.columnSpec = GridLayout.spec(col + ((direction == 3) ? -1 : 1), ROBOT_SIZE);
+			if (direction == Direction.UP.get() || direction == Direction.DOWN.get()) addon = MAZE_C;
+			if (direction == Direction.UP.get() || direction == Direction.LEFT.get()) addon *= -1;
+			temp_location = robot_location + addon;
+			if (!robot_hit(temp_location)) {
+				robot_location = temp_location;
+				robot_go();
 			}
-			robot.setLayoutParams(lp);
 		}
+	}
+
+	protected void robot_go() {
+		int row = robot_location / MAZE_C,
+			col = robot_location % MAZE_C;
+
+		GridLayout.LayoutParams lp = (GridLayout.LayoutParams) robot.getLayoutParams();
+		lp.rowSpec = GridLayout.spec(row, ROBOT_SIZE);
+		lp.columnSpec = GridLayout.spec(col, ROBOT_SIZE);
+		robot.setLayoutParams(lp);
+
+		robot_pass();
+	}
+
+	protected void robot_pass() {
+		int cell,
+			row = robot_location / MAZE_C,
+			col = robot_location % MAZE_C;
+		Drawable box = create_box(Cell.PASSED.getColor());
+		TextView tv;
+
+		for (int r = row; r < row + ROBOT_SIZE; r++) {
+			for (int c = col; c < col + ROBOT_SIZE; c++) {
+				cell = robot_cell(c, r);
+				tv = (TextView) grid_maze.getChildAt(cell);
+				if (cell != way_point) {
+					tv.setBackground(box);
+				}
+				tv.setText(String.valueOf(Cell.PASSED.get()));
+			}
+		}
+	}
+
+	protected boolean robot_hit(int cell) {
+		int row = cell / MAZE_C,
+			col = cell % MAZE_C;
+
+		for (int r = row; r < row + ROBOT_SIZE; r++) {
+			for (int c = col; c < col + ROBOT_SIZE; c++) {
+				if (obstacle_list.contains(robot_cell(c, r)))
+					return true;
+			}
+		}
+		return false;
+	}
+
+	protected int robot_cell(int col, int row) {
+		return (row * MAZE_C) + col;
 	}
 
 	protected void time_option() {
@@ -222,13 +307,13 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		Button b = (Button) v;
 		if (("Start").equalsIgnoreCase(b.getText().toString())) {
 			time_start = SystemClock.uptimeMillis();
-			handler.postDelayed(runnable, 0);
+			handler.postDelayed(time_stopwatch, 0);
 
 			findViewById(R.id.time_swt_isfast).setEnabled(false);
 			findViewById(R.id.time_btn_reset).setEnabled(false);
 			b.setText("Pause");
 		} else {
-			handler.removeCallbacks(runnable);
+			handler.removeCallbacks(time_stopwatch);
 
 			findViewById(R.id.time_swt_isfast).setEnabled(true);
 			findViewById(R.id.time_btn_reset).setEnabled(true);
@@ -245,11 +330,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 	protected void time_set(int min, int sec, int millisec) {
 		time_textview.setText("" + min + ":"
-				+ String.format("%02d", sec) + ":"
-				+ String.format("%03d", millisec));
+			+ String.format("%02d", sec) + ":"
+			+ String.format("%03d", millisec));
 	}
 
-	public Runnable runnable = new Runnable() {
+	public Runnable time_stopwatch = new Runnable() {
 		public void run() {
 			long time_count_ms = SystemClock.uptimeMillis() - time_start;
 			int time_s = (int) (time_count_ms / 1000);
@@ -257,19 +342,46 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 			time_set(time_s / 60, time_s % 60, (int) (time_count_ms % 1000));
 			handler.postDelayed(this, 0);
 		}
-
 	};
 
-	protected void point_set(boolean isorigin) { //TODO: SETTING POINTS
-//		int cell,
-//		point_x = Integer.valueOf(((TextView)findViewById(R.id.point_txt_x));
-//		if (isorigin) {
-//
-//		}else{
-//		}
+	protected void point_set(boolean isorigin) {
+		String point_x = ((TextView) findViewById(R.id.point_txt_x)).getText().toString(),
+			point_y = ((TextView) findViewById(R.id.point_txt_y)).getText().toString();
+		if (point_x.equalsIgnoreCase("") || point_y.equalsIgnoreCase("")) {
+			create_dialog("Setting Points", "Please fill in the text fields.");
+			return;
+		}
+
+		int col = Integer.valueOf(point_x),
+			row = Integer.valueOf(point_y),
+			cell = robot_cell(col, row);
+
+		if (robot_hit(cell)) {
+			create_dialog("Setting Points", "Robot will collide with obstacle.");
+			return;
+		}
+
+		if (isorigin) {
+			if ((col > (MAZE_C - ROBOT_SIZE)) || (row > (MAZE_R - ROBOT_SIZE))) {
+				create_dialog("Setting Points", "Robot cannot move to that point.");
+			} else {
+				robot_location = cell;
+				robot_go();
+			}
+		} else {
+			Drawable box;
+			if (way_point > -1) {
+				box = create_box(colorof_textview(((TextView) grid_maze.getChildAt(way_point)).getText().toString()));
+				grid_maze.getChildAt(way_point).setBackground(box);
+			}
+			box = create_box(Cell.WAYPOINT.getColor());
+			grid_maze.getChildAt(cell).setBackground(box);
+
+			way_point = cell;
+		}
 	}
 
-	protected void display_option() { //TODO: HOW TO AUTO?
+	protected void display_option() { //TODO: UNKNOWN - HOW TO AUTO?
 		SwitchCompat s = findViewById(R.id.display_swt_ismanual);
 		Button b = findViewById(R.id.display_btn_update);
 		if (s.isChecked()) {
@@ -281,7 +393,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		}
 	}
 
-	protected void display_manual() { //TODO: UNKNOWN - UPDATE MANUAL
+	protected void display_manual() { //TODO: UNKNOWN - HOW TO MANUAL?
 
+	}
+
+	protected void create_obstacle() { //TODO: REMOVABLE
+		int cell,
+			count = (new Random()).nextInt(30) + 10;
+
+		Drawable box = create_box(Cell.OBSTACLE.getColor());
+		TextView tv;
+		for (int i = 0; i < count; i++) {
+			cell = (new Random()).nextInt(266);
+			tv = (TextView) grid_maze.getChildAt(cell);
+			tv.setBackground(box);
+			tv.setText(String.valueOf(Cell.OBSTACLE.get()));
+			obstacle_list.add(cell);
+		}
 	}
 }
