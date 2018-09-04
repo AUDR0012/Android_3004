@@ -2,6 +2,8 @@ package android.mdp.android_3004;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
@@ -48,8 +50,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		setContentView(R.layout.activity_main);
 
 //		========== OTHERS ==========
+		this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 		dialog = new AlertDialog.Builder(this);
-		obstacle_list = new ArrayList<Integer>();
+		obstacle_list = new ArrayList<>();
 
 //		========== CLICKABLE CONTROLS ==========
 		int[] list_onclick = {R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
@@ -68,7 +71,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		grid_maze.setColumnCount(MAZE_C);
 		grid_maze.setRowCount(MAZE_R);
 
-		Drawable box = create_box(Cell.DEFAULT.getColor());
+		Drawable box = create_drawable(R.drawable.d_box, Cell.DEFAULT.getColor());
 		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 			TextView tv = new TextView(this);
 			tv.setGravity(Gravity.CENTER);
@@ -80,7 +83,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		robot_create();
 		robot_go();
 
-		create_obstacle();
+		obstacle_create();
+		obstacle_arrow(obstacle_list.get(0) % MAZE_C,obstacle_list.get(0) / MAZE_C, Direction.UP.get());
 
 //		========== STOPWATCH ==========
 		handler = new Handler();
@@ -187,8 +191,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		dialog.show();
 	}
 
-	protected Drawable create_box(int color) {
-		Drawable box = this.getResources().getDrawable(R.drawable.d_box, null);
+	protected Drawable create_drawable(int image, int color) {
+		Drawable box = this.getResources().getDrawable(image, null);
 		box.setColorFilter(color, PorterDuff.Mode.OVERLAY);
 		return box;
 	}
@@ -202,12 +206,39 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		return -1;
 	}
 
+	protected void obstacle_arrow(int col, int row, int direction) {
+		ImageView obstacle = new ImageView(this);
+		obstacle.setImageDrawable(create_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
+		obstacle.setBackground(create_drawable(R.drawable.d_box, Cell.OBSTACLE.getColor()));
+		obstacle.setRotation(direction * 90);
+		GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
+		lp.columnSpec = GridLayout.spec(col, 1);
+		lp.rowSpec = GridLayout.spec(row, 1);
+		obstacle.setLayoutParams(lp);
+		grid_maze.addView(obstacle);
+	}
+
+	protected void obstacle_create() { //TODO: REMOVABLE
+		int cell,
+			count = (new Random()).nextInt(30) + 10;
+
+		Drawable box = create_drawable(R.drawable.d_box, Cell.OBSTACLE.getColor());
+		TextView tv;
+		for (int i = 0; i < count; i++) {
+			cell = (new Random()).nextInt(266);
+			tv = (TextView) grid_maze.getChildAt(cell);
+			tv.setBackground(box);
+			tv.setText(String.valueOf(Cell.OBSTACLE.get()));
+			obstacle_list.add(cell);
+		}
+	}
+
 	protected void robot_create() {
 		int col = MAZE_C - ROBOT_SIZE, row = MAZE_R - ROBOT_SIZE;
 
-		Drawable d_robot = this.getResources().getDrawable(R.drawable.d_robot2, null);
 		robot = new ImageView(this);
-		robot.setImageDrawable(d_robot);
+		robot.setImageDrawable(create_drawable(R.drawable.d_robot, Color.TRANSPARENT));
+		//robot.setBackgroundColor(getResources().getColor(R.color.goldenrod));
 		GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
 		lp.columnSpec = GridLayout.spec(col, ROBOT_SIZE);
 		lp.rowSpec = GridLayout.spec(row, ROBOT_SIZE);
@@ -215,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		lp.width = 40 * ROBOT_SIZE;
 		robot.setLayoutParams(lp);
 		grid_maze.addView(robot);
-		robot_location = robot_cell(col, row);
+		robot_location = grid_cell(col, row);
 	}
 
 	protected void robot_rotate(int direction) {
@@ -259,12 +290,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		int cell,
 			row = robot_location / MAZE_C,
 			col = robot_location % MAZE_C;
-		Drawable box = create_box(Cell.PASSED.getColor());
+		Drawable box = create_drawable(R.drawable.d_box, Cell.PASSED.getColor());
 		TextView tv;
 
 		for (int r = row; r < row + ROBOT_SIZE; r++) {
 			for (int c = col; c < col + ROBOT_SIZE; c++) {
-				cell = robot_cell(c, r);
+				cell = grid_cell(c, r);
 				tv = (TextView) grid_maze.getChildAt(cell);
 				if (cell != way_point) {
 					tv.setBackground(box);
@@ -280,14 +311,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 		for (int r = row; r < row + ROBOT_SIZE; r++) {
 			for (int c = col; c < col + ROBOT_SIZE; c++) {
-				if (obstacle_list.contains(robot_cell(c, r)))
+				if (obstacle_list.contains(grid_cell(c, r)))
 					return true;
 			}
 		}
 		return false;
 	}
 
-	protected int robot_cell(int col, int row) {
+	protected int grid_cell(int col, int row) {
 		return (row * MAZE_C) + col;
 	}
 
@@ -354,7 +385,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 		int col = Integer.valueOf(point_x),
 			row = Integer.valueOf(point_y),
-			cell = robot_cell(col, row);
+			cell = grid_cell(col, row);
 
 		if (robot_hit(cell)) {
 			create_dialog("Setting Points", "Robot will collide with obstacle.");
@@ -371,10 +402,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		} else {
 			Drawable box;
 			if (way_point > -1) {
-				box = create_box(colorof_textview(((TextView) grid_maze.getChildAt(way_point)).getText().toString()));
+				box = create_drawable(R.drawable.d_box, colorof_textview(((TextView) grid_maze.getChildAt(way_point)).getText().toString()));
 				grid_maze.getChildAt(way_point).setBackground(box);
 			}
-			box = create_box(Cell.WAYPOINT.getColor());
+			box = create_drawable(R.drawable.d_box, Cell.WAYPOINT.getColor());
 			grid_maze.getChildAt(cell).setBackground(box);
 
 			way_point = cell;
@@ -395,20 +426,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 	protected void display_manual() { //TODO: UNKNOWN - HOW TO MANUAL?
 
-	}
-
-	protected void create_obstacle() { //TODO: REMOVABLE
-		int cell,
-			count = (new Random()).nextInt(30) + 10;
-
-		Drawable box = create_box(Cell.OBSTACLE.getColor());
-		TextView tv;
-		for (int i = 0; i < count; i++) {
-			cell = (new Random()).nextInt(266);
-			tv = (TextView) grid_maze.getChildAt(cell);
-			tv.setBackground(box);
-			tv.setText(String.valueOf(Cell.OBSTACLE.get()));
-			obstacle_list.add(cell);
-		}
 	}
 }

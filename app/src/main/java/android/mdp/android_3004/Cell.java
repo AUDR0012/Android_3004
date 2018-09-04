@@ -4,7 +4,7 @@ import android.graphics.Color;
 
 public enum Cell {
 	DEFAULT(0, Color.GREEN),
-	PASSED(1, Color.BLUE),
+	PASSED(1, Color.YELLOW),
 	OBSTACLE(2, Color.BLACK),
 	WAYPOINT(3, Color.RED);
 
