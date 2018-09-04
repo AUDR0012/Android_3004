@@ -2,6 +2,7 @@ package android.mdp.android_3004;
 
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		robot_go();
 
 		obstacle_create();
-		obstacle_arrow(obstacle_list.get(0) % MAZE_C,obstacle_list.get(0) / MAZE_C, Direction.UP.get());
+		obstacle_arrow(obstacle_list.get(0) % MAZE_C, obstacle_list.get(0) / MAZE_C, Direction.UP.get());
 
 //		========== STOPWATCH ==========
 		handler = new Handler();
@@ -168,8 +169,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
 		switch (item.getItemId()) {
 			case R.id.menu_bluetooth:
-				return true;
-			case R.id.menu_messenger:
+				startActivity(new Intent(MainActivity.this, BluetoothActivity.class));
 				return true;
 			case R.id.menu_maze:
 				return true;
@@ -238,7 +238,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 		robot = new ImageView(this);
 		robot.setImageDrawable(create_drawable(R.drawable.d_robot, Color.TRANSPARENT));
-		//robot.setBackgroundColor(getResources().getColor(R.color.goldenrod));
 		GridLayout.LayoutParams lp = new GridLayout.LayoutParams();
 		lp.columnSpec = GridLayout.spec(col, ROBOT_SIZE);
 		lp.rowSpec = GridLayout.spec(row, ROBOT_SIZE);

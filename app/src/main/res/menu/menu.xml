@@ -7,11 +7,6 @@
         android:title="Bluetooth"
         app:showAsAction="ifRoom" />
     <item
-        android:id="@+id/menu_messenger"
-        android:icon="@drawable/d_messenger"
-        android:title="Messenger"
-        app:showAsAction="ifRoom" />
-    <item
         android:id="@+id/menu_maze"
         android:icon="@drawable/d_maze"
         android:title="Maze"

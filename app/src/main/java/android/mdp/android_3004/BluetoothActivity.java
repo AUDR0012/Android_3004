@@ -1,8 +1,8 @@
 package android.mdp.android_3004;
 
 import android.content.Intent;
-import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -25,13 +25,13 @@ public class BluetoothActivity extends AppCompatActivity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) { //TODO: UNKNOWN - MERGE WITH WEEKIAT PART
-		//String title = item.getTitle().toString();
-		//((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
+		String title = item.getTitle().toString();
+		((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
 		switch (item.getItemId()) {
 			case R.id.menu_bluetooth:
 				return true;
 			case R.id.menu_maze:
-				startActivity(new Intent(BluetoothActivity.this, MainActivity.class));
+				finish();
 				return true;
 			default:
 				return super.onOptionsItemSelected(item);
