@@ -20,4 +20,10 @@
         <item name="android:colorForeground">@color/deep_sky_blue</item>
     </style>
 
+    <style name="DialogStyle" parent="Base.Theme.AppCompat.Light.Dialog.Alert">
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textColorPrimary">@color/dim_gray</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
 </resources>

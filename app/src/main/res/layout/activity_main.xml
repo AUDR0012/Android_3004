@@ -43,18 +43,49 @@
     <RelativeLayout
         android:id="@+id/ly_right"
         android:layout_width="150dp"
-        android:layout_height="601dp"
-        app:layout_constraintBottom_toTopOf="@id/ly_bottom"
+        android:layout_height="796dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/ly_left"
-        app:layout_constraintTop_toBottomOf="@id/ly_top"
-        app:layout_constraintVertical_bias="0.0">
+        app:layout_constraintTop_toBottomOf="@+id/ly_top">
+
+        <!--TODO: REMOVABLE LY_TILT: VISIBILITY-->
+        <RelativeLayout
+            android:visibility="gone"
+            android:id="@+id/ly_tilt"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_alignParentTop="true"
+            android:padding="5dp">
+
+            <TextView
+                android:id="@+id/tilt_lbl_header"
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:layout_alignParentTop="true"
+                android:gravity="bottom|center_horizontal"
+                android:text="Accelerometer"
+                android:textAllCaps="true"
+                android:textColor="@color/colorAccent" />
+
+            <android.support.v7.widget.SwitchCompat
+                android:id="@+id/tilt_swt_isoff"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_below="@+id/tilt_lbl_header"
+                android:switchTextAppearance="@android:style/TextAppearance.DeviceDefault.Small"
+                android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
+                android:textColor="@color/dim_gray"
+                android:textStyle="bold"
+                android:checked="true"
+                android:theme="@style/SwitchStyle" />
+        </RelativeLayout>
 
         <RelativeLayout
             android:id="@+id/ly_time"
             android:layout_width="match_parent"
             android:layout_height="210dp"
-            android:layout_alignParentTop="true"
+            android:layout_below="@+id/ly_tilt"
             android:padding="5dp">
 
             <TextView
@@ -314,10 +345,10 @@
 
     <RelativeLayout
         android:id="@+id/ly_bottom"
-        android:layout_width="match_parent"
+        android:layout_width="451dp"
         android:layout_height="196dp"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/ly_right"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/ly_left">
 

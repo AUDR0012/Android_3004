@@ -7,6 +7,10 @@ import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v7.app.AppCompatActivity;
@@ -27,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity {
 
 	final int MAZE_C = 15;
 	final int MAZE_R = 20;
@@ -44,28 +48,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 	TextView time_textview;
 
 	AlertDialog.Builder dialog;
+	SensorManager sensor_manager;
+	Sensor accelerometer_sensor;
+	SensorEventListener accelerometer_sensor_listener;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
 
 //		========== OTHERS ==========
-		this.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-		dialog = new AlertDialog.Builder(this);
+		dialog = new AlertDialog.Builder(this, R.style.DialogStyle);
 		obstacle_list = new ArrayList<>();
 
 //		========== CLICKABLE CONTROLS ==========
-		int[] list_onclick = {R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
+		int[] list_onclick = {R.id.tilt_swt_isoff,
+			R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
 			R.id.time_btn_stopwatch, R.id.time_btn_reset, R.id.time_swt_isfast,
 			R.id.point_btn_origin, R.id.point_btn_way,
 			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig,
 			R.id.display_swt_ismanual, R.id.display_btn_update};
 		for (int onclick : list_onclick) {
-			findViewById(onclick).setOnClickListener(this);
+			findViewById(onclick).setOnClickListener(onClickListener);
 		}
-		time_option();
-		display_option();
+
+//		========== ACCELEROMETER ==========
+		sensor_manager = (SensorManager) getSystemService(SENSOR_SERVICE);
+		accelerometer_sensor = sensor_manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+		accelerometer_sensor_listener = new SensorEventListener() {
+			@Override
+			public void onSensorChanged(SensorEvent sensorEvent) {
+				tilt_move(sensorEvent.values[0], sensorEvent.values[1], sensorEvent.values[2]);
+			}
+
+			@Override
+			public void onAccuracyChanged(Sensor sensor, int i) {
+			}
+		};
+		tilt_option();
 
 //		========== MAZE ==========
 		grid_maze = findViewById(R.id.grid_maze);
@@ -89,6 +110,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 //		========== STOPWATCH ==========
 		handler = new Handler();
+		time_option();
+
+//		========== DISPLAY GRAPHICS ==========
+		display_option();
 
 //		========== SET POINTS ==========
 		((EditText) findViewById(R.id.point_txt_x)).setHint(String.valueOf(MAZE_C - 1));
@@ -98,85 +123,89 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 	}
 
 	@Override
-	public void onClick(View v) {
-		String title; //TODO: REMOVABLE
-		if (v instanceof Button) title = ((Button) v).getText().toString();
-		else title = ((SwitchCompat) v).getText().toString();
-		((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
-
-		switch (v.getId()) {
-			//MAZE
-			case R.id.direction_btn_up:
-				robot_move();
-				break;
-			case R.id.direction_btn_down:
-				robot_rotate(Direction.DOWN.get());
-				break;
-			case R.id.direction_btn_left:
-				robot_rotate(Direction.LEFT.get());
-				break;
-			case R.id.direction_btn_right:
-				robot_rotate(Direction.RIGHT.get());
-				break;
-
-			//STOPWATCH
-			case R.id.time_swt_isfast:
-				time_option();
-				break;
-			case R.id.time_btn_stopwatch:
-				time_stopwatch(v);
-				break;
-			case R.id.time_btn_reset:
-				time_reset();
-				break;
-
-			//SET POINT
-			case R.id.point_btn_origin:
-				point_set(true);
-				break;
-			case R.id.point_btn_way:
-				point_set(false);
-				break;
-
-			//CONFIGURATIONS //TODO: UNKNOWN - WHAT TO DO?
-			case R.id.config_btn_f1:
-				break;
-			case R.id.config_btn_f2:
-				break;
-			case R.id.config_btn_reconfig:
-				break;
-
-			//DISPLAY GRAPHICS
-			case R.id.display_swt_ismanual:
-				display_option();
-				break;
-			case R.id.display_btn_update:
-				display_manual();
-				break;
-		}
-	}
-
-	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater mi = getMenuInflater();
-		mi.inflate(R.menu.menu, menu);
+		mi.inflate(R.menu.menu_atmaze, menu);
 		return super.onCreateOptionsMenu(menu);
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) { //TODO: UNKNOWN - MERGE WITH WEEKIAT PART
+	public boolean onOptionsItemSelected(MenuItem item) {
 		String title = item.getTitle().toString();
 		((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
 		switch (item.getItemId()) {
 			case R.id.menu_bluetooth:
-				startActivity(new Intent(MainActivity.this, BluetoothActivity.class));
-				return true;
-			case R.id.menu_maze:
+				startActivity(new Intent(MainActivity.this, SecondaryActivity.class));
 				return true;
 			default:
 				return super.onOptionsItemSelected(item);
 		}
 	}
+
+	private View.OnClickListener onClickListener = new View.OnClickListener() {
+		public void onClick(View v) {
+			String title; //TODO: REMOVABLE
+			if (v instanceof Button) title = ((Button) v).getText().toString();
+			else title = ((SwitchCompat) v).getText().toString();
+			((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
+
+			switch (v.getId()) {
+				//ACCELEROMETER
+				case R.id.tilt_swt_isoff:
+					tilt_option();
+					break;
+
+				//MAZE
+				case R.id.direction_btn_up:
+					robot_move(directionof_robot((((int) robot.getRotation()) % 360) / 90));
+					break;
+				case R.id.direction_btn_down:
+					robot_rotate(Direction.DOWN.get());
+					break;
+				case R.id.direction_btn_left:
+					robot_rotate(Direction.LEFT.get());
+					break;
+				case R.id.direction_btn_right:
+					robot_rotate(Direction.RIGHT.get());
+					break;
+
+				//STOPWATCH
+				case R.id.time_swt_isfast:
+					time_option();
+					break;
+				case R.id.time_btn_stopwatch:
+					time_stopwatch(v);
+					break;
+				case R.id.time_btn_reset:
+					time_reset();
+					break;
+
+				//SET POINTS
+				case R.id.point_btn_origin:
+					point_set(true);
+					break;
+				case R.id.point_btn_way:
+					point_set(false);
+					break;
+
+				//CONFIGURATIONS //TODO: UNKNOWN - WHAT TO DO?
+				case R.id.config_btn_f1:
+					break;
+				case R.id.config_btn_f2:
+					break;
+				case R.id.config_btn_reconfig:
+					break;
+
+				//DISPLAY GRAPHICS //TODO: UNKNOWN - WHAT TO DO?
+				case R.id.display_swt_ismanual:
+					display_option();
+					break;
+				case R.id.display_btn_update:
+					display_manual();
+					break;
+			}
+		}
+	};
 
 	protected void create_dialog(String title, String message) {
 		dialog.setTitle(title);
@@ -192,7 +221,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 	}
 
 	protected Drawable create_drawable(int image, int color) {
-		Drawable box = this.getResources().getDrawable(image, null);
+		Drawable box = getResources().getDrawable(image, null);
 		box.setColorFilter(color, PorterDuff.Mode.OVERLAY);
 		return box;
 	}
@@ -204,6 +233,15 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 			}
 		}
 		return -1;
+	}
+
+	protected Direction directionof_robot(int direction) {
+		for (Direction d : Direction.values()) {
+			if (direction == d.get()) {
+				return d;
+			}
+		}
+		return null;
 	}
 
 	protected void obstacle_arrow(int col, int row, int direction) {
@@ -220,7 +258,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
 	protected void obstacle_create() { //TODO: REMOVABLE
 		int cell,
-			count = (new Random()).nextInt(30) + 10;
+			count = (new Random()).nextInt(10) + 10;
 
 		Drawable box = create_drawable(R.drawable.d_box, Cell.OBSTACLE.getColor());
 		TextView tv;
@@ -231,6 +269,24 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 			tv.setText(String.valueOf(Cell.OBSTACLE.get()));
 			obstacle_list.add(cell);
 		}
+	}
+
+	protected void tilt_option() {
+		SwitchCompat s = findViewById(R.id.tilt_swt_isoff);
+		if (s.isChecked()) {
+			s.setText("Off");
+			sensor_manager.unregisterListener(accelerometer_sensor_listener);
+		} else {
+			s.setText("On");
+			sensor_manager.registerListener(accelerometer_sensor_listener, accelerometer_sensor, 3);
+		}
+	}
+
+	protected void tilt_move(float x, float y, float z) {
+		if (x > 0.5f) robot_move(Direction.LEFT);
+		if (x < -0.5f) robot_move(Direction.RIGHT);
+		if (y > 0.5f) robot_move(Direction.DOWN);
+		if (y < -0.5f) robot_move(Direction.UP);
 	}
 
 	protected void robot_create() {
@@ -252,24 +308,32 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 		robot.setRotation(robot.getRotation() + (direction * 90));
 	}
 
-	protected void robot_move() {
-		int temp_location,
+	protected void robot_move(Direction direction) {
+		int temp_location = robot_location,
 			col = robot_location % MAZE_C,
-			row = robot_location / MAZE_C,
-			direction = (((int) robot.getRotation()) % 360) / 90;
+			row = robot_location / MAZE_C;
 
-		if ((direction == Direction.UP.get() && row > 0) ||
-			(direction == Direction.RIGHT.get() && col < (MAZE_C - ROBOT_SIZE)) ||
-			(direction == Direction.DOWN.get() && row < (MAZE_R - ROBOT_SIZE)) ||
-			(direction == Direction.LEFT.get() && col > 0)) {
-			int addon = 1;
-			if (direction == Direction.UP.get() || direction == Direction.DOWN.get()) addon = MAZE_C;
-			if (direction == Direction.UP.get() || direction == Direction.LEFT.get()) addon *= -1;
-			temp_location = robot_location + addon;
-			if (!robot_hit(temp_location)) {
-				robot_location = temp_location;
-				robot_go();
-			}
+		switch (direction) {
+			case UP:
+				if (row > 0)
+					temp_location -= MAZE_C;
+				break;
+			case DOWN:
+				if (row < (MAZE_R - ROBOT_SIZE))
+					temp_location += MAZE_C;
+				break;
+			case LEFT:
+				if (col > 0)
+					temp_location -= 1;
+				break;
+			case RIGHT:
+				if (col < (MAZE_C - ROBOT_SIZE))
+					temp_location += 1;
+				break;
+		}
+		if (!robot_hit(temp_location)) {
+			robot_location = temp_location;
+			robot_go();
 		}
 	}
 
