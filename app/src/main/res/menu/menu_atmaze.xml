@@ -2,8 +2,30 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/menu_bluetooth"
-        android:icon="@drawable/d_bluetooth"
-        android:title="Bluetooth"
+        android:id="@+id/menu_restart"
+        android:icon="@drawable/d_restart"
+        android:title="Restart"
         app:showAsAction="ifRoom" />
+
+    <item
+        android:id="@+id/menu_bluetooth"
+        android:icon="@drawable/d_bluetooth_off"
+        android:title="Bluetooth"
+        app:showAsAction="ifRoom">
+
+        <menu>
+            <item
+                android:id="@+id/menu_bluetooth_onoff"
+                android:title="Turn On" />
+            <item
+                android:id="@+id/menu_bluetooth_finddevices"
+                android:title="Find Devices" />
+            <item
+                android:id="@+id/menu_message"
+                android:title="Message" />
+            <item
+                android:id="@+id/menu_bluetooth_move"
+                android:title="To Other Page" />
+        </menu>
+    </item>
 </menu>
