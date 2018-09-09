@@ -6,7 +6,7 @@
     android:layout_height="match_parent">
 
     <RelativeLayout
-        android:id="@+id/ly_bluetooth"
+        android:id="@+id/ly_bt"
         android:layout_width="match_parent"
         android:layout_height="400dp"
         android:orientation="vertical"
@@ -16,7 +16,7 @@
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
-            android:id="@+id/bluetooth_lbl_header"
+            android:id="@+id/bt_lbl_header"
             android:layout_width="match_parent"
             android:layout_height="30dp"
             android:layout_alignParentTop="true"
@@ -26,14 +26,14 @@
             android:textColor="@color/colorAccent" />
 
         <ListView
-            android:id="@+id/bluetooth_lv_devices"
+            android:id="@+id/bt_lv_devices"
             android:layout_width="match_parent"
             android:layout_height="315dp"
-            android:layout_below="@+id/bluetooth_lbl_header"
+            android:layout_below="@+id/bt_lbl_header"
             android:background="@drawable/d_box" />
 
         <Button
-            android:id="@+id/bluetooth_btn_find"
+            android:id="@+id/bt_btn_find"
             android:layout_width="match_parent"
             android:layout_height="40dp"
             android:layout_alignParentBottom="true"

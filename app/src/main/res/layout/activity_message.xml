@@ -10,6 +10,9 @@
         android:layout_width="match_parent"
         android:layout_height="400dp"
         android:orientation="vertical"
+        android:padding="5dp"
+        android:paddingEnd="14dp"
+        android:paddingStart="14dp"
         app:layout_constraintTop_toTopOf="parent">
 
         <TextView
@@ -22,110 +25,21 @@
             android:textAllCaps="true"
             android:textColor="@color/colorAccent" />
 
-        <LinearLayout
+        <ListView
+            android:id="@+id/message_lv_chats"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_below="@id/message_lbl_header"
-            android:orientation="horizontal">
-
-            <LinearLayout
-                android:id="@+id/ly_receive"
-                android:layout_width="0dp"
-                android:layout_height="325dp"
-                android:layout_alignParentStart="true"
-                android:layout_below="@+id/message_lbl_header"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:padding="5dp"
-                android:paddingEnd="7dp"
-                android:paddingStart="14dp">
-
-                <TextView
-                    android:id="@+id/receive_lbl_header"
-                    android:layout_width="match_parent"
-                    android:layout_height="30dp"
-                    android:gravity="bottom|center_horizontal"
-                    android:text="Received Text"
-                    android:textAllCaps="true"
-                    android:textStyle="bold" />
-
-                <ScrollView
-                    android:id="@+id/receive_scroll_display"
-                    android:layout_width="match_parent"
-                    android:layout_height="285dp"
-                    android:layout_below="@+id/receive_lbl_header"
-                    android:background="@drawable/d_box">
-
-                    <TextView
-                        android:id="@+id/receive_lv_display"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="15dp"
-                        android:scrollbars="vertical"
-                        android:singleLine="false"
-                        android:textColor="@color/midnight_blue"
-                        android:textSize="14sp" />
-                </ScrollView>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/ly_send"
-                android:layout_width="0dp"
-                android:layout_height="325dp"
-                android:layout_alignParentEnd="true"
-                android:layout_below="@+id/message_lbl_header"
-                android:layout_weight="1"
-                android:focusable="true"
-                android:focusableInTouchMode="true"
-                android:orientation="vertical"
-                android:padding="5dp"
-                android:paddingEnd="14dp"
-                android:paddingStart="7dp">
-
-                <TextView
-                    android:id="@+id/send_lbl_header"
-                    android:layout_width="match_parent"
-                    android:layout_height="30dp"
-                    android:gravity="bottom|center_horizontal"
-                    android:text="Send to Remote"
-                    android:textAllCaps="true"
-                    android:textStyle="bold" />
-
-                <ScrollView
-                    android:id="@+id/send_scroll_display"
-                    android:layout_width="match_parent"
-                    android:layout_height="285dp"
-                    android:layout_below="@+id/send_lbl_header"
-                    android:background="@drawable/d_box">
-
-                    <TextView
-                        android:id="@+id/send_lv_display"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:padding="15dp"
-                        android:scrollbars="vertical"
-                        android:singleLine="false"
-                        android:textColor="@color/midnight_blue"
-                        android:textSize="14sp" />
-
-                </ScrollView>
-
-            </LinearLayout>
-
-        </LinearLayout>
+            android:layout_height="315dp"
+            android:layout_below="@+id/message_lbl_header"
+            android:background="@drawable/d_box" />
 
         <RelativeLayout
             android:id="@+id/ly_data"
             android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="40dp"
             android:layout_alignParentBottom="true"
             android:layout_centerVertical="true"
             android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:padding="5dp"
-            android:paddingEnd="14dp"
-            android:paddingStart="14dp">
+            android:focusableInTouchMode="true">
 
             <EditText
                 android:id="@+id/data_txt_message"

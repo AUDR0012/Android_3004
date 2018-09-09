@@ -8,24 +8,28 @@
         app:showAsAction="ifRoom" />
 
     <item
-        android:id="@+id/menu_bluetooth"
-        android:icon="@drawable/d_bluetooth_off"
+        android:id="@+id/menu_bt"
+        android:icon="@drawable/d_bt_off"
         android:title="Bluetooth"
         app:showAsAction="ifRoom">
 
         <menu>
             <item
-                android:id="@+id/menu_bluetooth_onoff"
+                android:id="@+id/menu_bt_on"
                 android:title="Turn On" />
             <item
-                android:id="@+id/menu_bluetooth_finddevices"
+                android:id="@+id/menu_bt_off"
+                android:title="Turn Off" />
+            <item
+                android:id="@+id/menu_bt_discoverable"
+                android:title="Toggle Discovery" />
+            <item
+                android:id="@+id/menu_bt_finddevices"
                 android:title="Find Devices" />
             <item
-                android:id="@+id/menu_message"
-                android:title="Message" />
-            <item
-                android:id="@+id/menu_bluetooth_move"
-                android:title="To Other Page" />
+                android:id="@+id/menu_bt_move"
+                android:title="To Other Page"
+                android:visible="false" />
         </menu>
     </item>
 </menu>

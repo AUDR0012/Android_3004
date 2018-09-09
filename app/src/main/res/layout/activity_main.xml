@@ -49,13 +49,13 @@
         app:layout_constraintTop_toBottomOf="@+id/ly_top">
 
         <RelativeLayout
-            android:id="@+id/ly_bluetooth"
+            android:id="@+id/ly_bt"
             android:layout_width="match_parent"
             android:layout_height="80dp"
             android:layout_alignParentTop="true">
 
             <TextView
-                android:id="@+id/bluetooth_lbl_header"
+                android:id="@+id/bt_lbl_header"
                 style="@style/HeaderStyle"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
@@ -63,19 +63,19 @@
                 android:text="Bluetooth" />
 
             <TextView
-                android:id="@+id/bluetooth_lbl_connected"
+                android:id="@+id/bt_lbl_connected"
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
-                android:layout_below="@+id/bluetooth_lbl_header"
+                android:layout_below="@+id/bt_lbl_header"
                 android:text="Connected to:"
                 android:textColor="@color/dim_gray"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/bluetooth_txt_connected"
+                android:id="@+id/bt_txt_connected"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:layout_below="@id/bluetooth_lbl_connected" />
+                android:layout_below="@id/bt_lbl_connected" />
 
         </RelativeLayout>
 
@@ -84,7 +84,7 @@
             android:id="@+id/ly_tilt"
             android:layout_width="match_parent"
             android:layout_height="70dp"
-            android:layout_below="@id/ly_bluetooth"
+            android:layout_below="@id/ly_bt"
             android:visibility="gone">
 
             <TextView
@@ -381,6 +381,13 @@
 
         </GridLayout>
 
+        <Button
+            android:id="@+id/message_btn_toggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentEnd="true"
+            android:text="Message" />
 
     </RelativeLayout>
 

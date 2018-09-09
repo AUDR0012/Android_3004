@@ -6,14 +6,6 @@
         <item name="colorAccent">@color/colorAccent</item>
     </style>
 
-    <style name="ThemeGrey.NoActionBar" parent="ThemeGrey">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
-        <item name="android:windowIsTranslucent">true</item>
-        <item name="android:backgroundDimEnabled">true</item>
-        <item name="android:windowCloseOnTouchOutside">true</item>
-    </style>
-
     <style name="SwitchStyle" parent="Base.Theme.AppCompat.Light">
         <item name="colorControlActivated">@color/lime_green</item>
         <item name="colorSwitchThumbNormal">@color/deep_sky_blue</item>
