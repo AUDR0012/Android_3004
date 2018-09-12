@@ -4,32 +4,28 @@
     <item
         android:id="@+id/menu_restart"
         android:icon="@drawable/d_restart"
-        android:title="Restart"
+        android:title="@string/menu_restart"
         app:showAsAction="ifRoom" />
 
     <item
         android:id="@+id/menu_bt"
         android:icon="@drawable/d_bt_off"
-        android:title="Bluetooth"
+        android:title="@string/menu_bt"
         app:showAsAction="ifRoom">
 
         <menu>
             <item
                 android:id="@+id/menu_bt_on"
-                android:title="Turn On" />
+                android:title="@string/bt_on" />
             <item
                 android:id="@+id/menu_bt_off"
-                android:title="Turn Off" />
+                android:title="@string/bt_off" />
             <item
-                android:id="@+id/menu_bt_discoverable"
-                android:title="Toggle Discovery" />
+                android:id="@+id/menu_bt_discover"
+                android:title="@string/bt_discover" />
             <item
-                android:id="@+id/menu_bt_finddevices"
-                android:title="Find Devices" />
-            <item
-                android:id="@+id/menu_bt_move"
-                android:title="To Other Page"
-                android:visible="false" />
+                android:id="@+id/menu_bt_find"
+                android:title="@string/bt_find" />
         </menu>
     </item>
 </menu>

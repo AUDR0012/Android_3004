@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,8 +9,7 @@
         android:id="@+id/ly_top"
         android:layout_width="match_parent"
         android:layout_height="20dp"
-        app:layout_constraintBottom_toTopOf="@id/ly_left"
-        app:layout_constraintTop_toTopOf="parent">
+        android:layout_alignParentTop="true">
 
         <TextView
             android:id="@+id/txt_status"
@@ -19,18 +17,17 @@
             android:layout_height="match_parent"
             android:background="@color/tomato"
             android:gravity="center"
-            android:text="No Status"
+            android:text="@string/status_default"
             android:textColor="@color/white" />
+
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/ly_left"
         android:layout_width="451dp"
         android:layout_height="601dp"
-        app:layout_constraintBottom_toTopOf="@id/ly_bottom"
-        app:layout_constraintEnd_toStartOf="@id/ly_right"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ly_top">
+        android:layout_alignParentStart="true"
+        android:layout_below="@id/ly_top">
 
         <GridLayout
             android:id="@+id/grid_maze"
@@ -38,233 +35,214 @@
             android:layout_height="match_parent" />
     </LinearLayout>
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/ly_right"
         android:layout_width="150dp"
         android:layout_height="796dp"
-        android:padding="5dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/ly_left"
-        app:layout_constraintTop_toBottomOf="@+id/ly_top">
+        android:layout_alignParentEnd="true"
+        android:layout_below="@id/ly_top"
+        android:orientation="vertical"
+        android:padding="5dp">
 
-        <RelativeLayout
-            android:id="@+id/ly_bt"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:layout_alignParentTop="true">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/bt_lbl_header"
                 style="@style/HeaderStyle"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:layout_alignParentTop="true"
-                android:text="Bluetooth" />
+                android:text="@string/bt_header" />
 
             <TextView
                 android:id="@+id/bt_lbl_connected"
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
-                android:layout_below="@+id/bt_lbl_header"
-                android:text="Connected to:"
                 android:textColor="@color/dim_gray"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/bt_txt_connected"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_below="@id/bt_lbl_connected" />
+                android:layout_height="20dp" />
 
-        </RelativeLayout>
+        </LinearLayout>
 
-        <!--TODO: REMOVABLE LY_TILT: VISIBILITY-->
-        <RelativeLayout
-            android:id="@+id/ly_tilt"
+        <!--TODO:REMOVABLE LY_TILT::VISIBILITY-->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:layout_below="@id/ly_bt"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:visibility="gone">
 
             <TextView
-                android:id="@+id/tilt_lbl_header"
                 style="@style/HeaderStyle"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:layout_alignParentTop="true"
-                android:text="Accelerometer" />
+                android:text="@string/tilt_header" />
 
             <android.support.v7.widget.SwitchCompat
                 android:id="@+id/tilt_swt_isoff"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_below="@+id/tilt_lbl_header"
+                android:layout_height="30dp"
                 android:checked="true"
                 android:textColor="@color/dim_gray"
                 android:theme="@style/SwitchStyle" />
-        </RelativeLayout>
+        </LinearLayout>
 
-        <RelativeLayout
-            android:id="@+id/ly_time"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="220dp"
-            android:layout_below="@id/ly_tilt">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/time_lbl_header"
                 style="@style/HeaderStyle"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:layout_alignParentTop="true"
-                android:text="Timings" />
+                android:text="@string/time_header" />
 
             <TextView
-                android:id="@+id/time_lbl_explore"
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
-                android:layout_below="@+id/time_lbl_header"
-                android:text="Exploration Time:"
+                android:text="@string/time_explore_header"
                 android:textColor="@color/dim_gray"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/time_txt_explore"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_below="@+id/time_lbl_explore" />
+                android:layout_height="25dp" />
 
             <TextView
-                android:id="@+id/time_lbl_fast"
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
-                android:layout_below="@+id/time_txt_explore"
-                android:text="Fastest Path Time:"
+                android:text="@string/time_fastest_header"
                 android:textColor="@color/dim_gray"
                 android:textStyle="bold" />
 
             <TextView
-                android:id="@+id/time_txt_fast"
+                android:id="@+id/time_txt_fastest"
                 android:layout_width="match_parent"
-                android:layout_height="30dp"
-                android:layout_below="@+id/time_lbl_fast" />
+                android:layout_height="20dp" />
 
             <android.support.v7.widget.SwitchCompat
-                android:id="@+id/time_swt_isfast"
+                android:id="@+id/time_swt_isfastest"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_above="@+id/time_btn_stopwatch"
+                android:layout_height="30dp"
                 android:textColor="@color/dim_gray"
                 android:theme="@style/SwitchStyle" />
 
-            <Button
-                android:id="@+id/time_btn_stopwatch"
-                style="@style/ButtonStyle"
-                android:layout_width="70dp"
-                android:layout_height="40dp"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentStart="true"
-                android:text="Start" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-            <Button
-                android:id="@+id/time_btn_reset"
-                style="@style/ButtonStyle"
-                android:layout_width="70dp"
-                android:layout_height="40dp"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentEnd="true"
-                android:text="Reset" />
+                <Button
+                    android:id="@+id/time_btn_stopwatch"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="@string/time_start" />
 
-        </RelativeLayout>
+                <Button
+                    android:id="@+id/time_btn_reset"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="@string/time_reset" />
 
-        <RelativeLayout
-            android:id="@+id/ly_point"
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:layout_below="@id/ly_time"
+            android:layout_height="wrap_content"
             android:focusable="true"
-            android:focusableInTouchMode="true">
+            android:focusableInTouchMode="true"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/point_lbl_header"
                 style="@style/HeaderStyle"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:layout_alignParentTop="true"
-                android:text="Set Points" />
+                android:text="@string/point_header" />
 
-            <TextView
-                android:id="@+id/point_lbl_x"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:layout_alignParentStart="true"
-                android:layout_below="@id/point_lbl_header"
-                android:gravity="bottom"
-                android:text="X:" />
+                android:layout_height="match_parent"
+                android:orientation="horizontal">
 
-            <EditText
-                android:id="@+id/point_txt_x"
-                style="@style/EditTextStyle"
-                android:layout_width="50dp"
-                android:layout_height="40dp"
-                android:layout_below="@id/point_lbl_header"
-                android:layout_toEndOf="@+id/point_lbl_x" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:gravity="bottom"
+                    android:text="@string/point_x" />
 
-            <TextView
-                android:id="@+id/point_lbl_y"
-                android:layout_width="wrap_content"
-                android:layout_height="30dp"
-                android:layout_below="@id/point_lbl_header"
-                android:layout_toStartOf="@+id/point_txt_y"
-                android:gravity="bottom"
-                android:text="Y:" />
+                <EditText
+                    android:id="@+id/point_txt_x"
+                    style="@style/EditTextStyle"
+                    android:layout_width="50dp"
+                    android:layout_height="40dp" />
 
-            <EditText
-                android:id="@+id/point_txt_y"
-                style="@style/EditTextStyle"
-                android:layout_width="50dp"
-                android:layout_height="40dp"
-                android:layout_alignParentEnd="true"
-                android:layout_below="@id/point_lbl_header" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="30dp"
+                    android:gravity="bottom"
+                    android:paddingEnd="0dp"
+                    android:paddingStart="15dp"
+                    android:text="@string/point_y" />
 
-            <Button
-                android:id="@+id/point_btn_origin"
-                style="@style/ButtonStyle"
-                android:layout_width="70dp"
-                android:layout_height="40dp"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentStart="true"
-                android:text="Origin" />
+                <EditText
+                    android:id="@+id/point_txt_y"
+                    style="@style/EditTextStyle"
+                    android:layout_width="50dp"
+                    android:layout_height="40dp" />
+            </LinearLayout>
 
-            <Button
-                android:id="@+id/point_btn_way"
-                style="@style/ButtonStyle"
-                android:layout_width="70dp"
-                android:layout_height="40dp"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentEnd="true"
-                android:text="Way" />
-        </RelativeLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
-        <RelativeLayout
-            android:id="@+id/ly_display"
+                <Button
+                    android:id="@+id/point_btn_origin"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="@string/point_origin" />
+
+                <Button
+                    android:id="@+id/point_btn_way"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_height="40dp"
+                    android:layout_weight="1"
+                    android:text="@string/point_way" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="110dp"
-            android:layout_below="@id/ly_point">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/display_lbl_header"
                 style="@style/HeaderStyle"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:layout_alignParentTop="true"
-                android:text="Display" />
+                android:text="@string/display_header" />
 
             <android.support.v7.widget.SwitchCompat
                 android:id="@+id/display_swt_ismanual"
                 android:layout_width="match_parent"
-                android:layout_height="40dp"
-                android:layout_below="@+id/display_lbl_header"
+                android:layout_height="30dp"
                 android:textColor="@color/dim_gray"
                 android:theme="@style/SwitchStyle" />
 
@@ -273,29 +251,24 @@
                 style="@style/ButtonStyle"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:layout_alignParentBottom="true"
-                android:text="Update" />
-        </RelativeLayout>
+                android:text="@string/display_update" />
+        </LinearLayout>
 
-        <RelativeLayout
-            android:id="@+id/ly_config"
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="195dp"
-            android:layout_below="@id/ly_display">
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/config_lbl_header"
                 style="@style/HeaderStyle"
                 android:layout_width="match_parent"
                 android:layout_height="30dp"
-                android:layout_alignParentTop="true"
-                android:text="Configurations" />
+                android:text="@string/config_header" />
 
             <GridLayout
                 android:id="@+id/config_grid_btn"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/config_lbl_header"
                 android:background="@drawable/d_box" />
 
             <Button
@@ -303,9 +276,9 @@
                 style="@style/ButtonStyle"
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
-                android:layout_below="@id/config_grid_btn"
-                android:text="Reconfigure" />
+                android:text="@string/config_reconfig" />
 
+            <!--TODO:CONFIGURATIONS-->
             <!--<Button-->
             <!--android:id="@+id/config_btn_f1"-->
             <!--android:layout_width="70dp"-->
@@ -327,26 +300,25 @@
             <!--android:textAllCaps="true"-->
             <!--android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"-->
             <!--android:textSize="14sp" />-->
-        </RelativeLayout>
+        </LinearLayout>
 
-    </RelativeLayout>
+    </LinearLayout>
 
-    <RelativeLayout
+    <LinearLayout
         android:id="@+id/ly_bottom"
         android:layout_width="451dp"
         android:layout_height="196dp"
-        android:padding="5dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/ly_right"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ly_left">
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentStart="true"
+        android:paddingBottom="5dp"
+        android:paddingEnd="0dp"
+        android:paddingStart="5dp"
+        android:paddingTop="10dp">
 
         <GridLayout
             android:id="@+id/grid_direction"
             android:layout_width="150dp"
             android:layout_height="150dp"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentStart="true"
             android:background="@drawable/d_box"
             android:columnCount="3"
             android:rowCount="3">
@@ -381,14 +353,30 @@
 
         </GridLayout>
 
-        <Button
-            android:id="@+id/message_btn_toggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentEnd="true"
-            android:text="Message" />
+        <LinearLayout
+            android:id="@+id/msg_layout"
+            android:layout_width="290dp"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:paddingEnd="0dp"
+            android:paddingStart="5dp">
 
-    </RelativeLayout>
+            <ImageButton
+                android:id="@+id/msg_temp"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/d_box"
+                android:visibility="visible" />
 
-</android.support.constraint.ConstraintLayout>
+            <ListView
+                android:id="@+id/msg_lv_preview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/d_box"
+                android:padding="10dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</RelativeLayout>
