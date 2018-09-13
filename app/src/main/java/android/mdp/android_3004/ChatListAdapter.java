@@ -22,8 +22,6 @@ public class ChatListAdapter extends ArrayAdapter<Message> {
 		message_list = m_list;
 		inflater = (LayoutInflater) c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		resource_id = r_id;
-
-
 	}
 
 	public View getView(int position, View convertView, ViewGroup parent) {
@@ -34,10 +32,26 @@ public class ChatListAdapter extends ArrayAdapter<Message> {
 			TextView details = convertView.findViewById(R.id.msg_txt_details);
 			details.setText(message.getDetails());
 
+			Instruction instruction = getInstruction(message.getDetails());
+			if (instruction != null) {
+				TextView description = convertView.findViewById(R.id.msg_txt_description);
+				description.setVisibility(View.VISIBLE);
+				description.setText(":: " + instruction.getDescription());
+			}
+
 			Drawable speech = convertView.getResources().getDrawable(R.drawable.d_speech, null);
 			speech.setColorFilter(message.getColor(), PorterDuff.Mode.SRC_ATOP);
 			convertView.setBackground(speech);
 		}
 		return convertView;
+	}
+
+	public Instruction getInstruction(String text) {
+		for (Instruction i : Instruction.values()) {
+			if (i.getArduino().equalsIgnoreCase(text)) {
+				return i;
+			}
+		}
+		return null;
 	}
 }

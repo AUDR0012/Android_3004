@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
 			R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
 			R.id.time_btn_stopwatch, R.id.time_btn_reset, R.id.time_swt_isfastest,
 			R.id.point_btn_origin, R.id.point_btn_way,
-			R.id.config_btn_reconfig,
+			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig,
 			R.id.display_swt_ismanual, R.id.display_btn_update};
 		for (int onclick : list_onclick) {
 			findViewById(onclick).setOnClickListener(onClickListener);
@@ -147,8 +147,8 @@ public class MainActivity extends AppCompatActivity {
 			grid_maze.addView(tv);
 		}
 
-		obstacle_create();
-		obstacle_arrow(obstacle_list.get(0) % MAZE_C, obstacle_list.get(0) / MAZE_C, Direction.UP.get());
+//		obstacle_create(); //TODO:REMOVABLE
+//		obstacle_arrow(obstacle_list.get(0) % MAZE_C, obstacle_list.get(0) / MAZE_C, Direction.UP.get()); //TODO:REMOVABLE
 
 //		========== ACCELEROMETER ==========
 		sensor_manager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -273,9 +273,9 @@ public class MainActivity extends AppCompatActivity {
 		return null;
 	}
 
-	protected Instruction enum_getinstruction(String write_text) {
+	protected Instruction enum_getinstruction(String arduino) {
 		for (Instruction i : Instruction.values()) {
-			if (i.getWriteText().equalsIgnoreCase(write_text)) {
+			if (i.getArduino().equalsIgnoreCase(arduino)) {
 				return i;
 			}
 		}
@@ -322,24 +322,15 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void reg_bt_intentfilter() {
 		IntentFilter filter = new IntentFilter();
-		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+//		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
-		filter.addAction(BluetoothDevice.ACTION_FOUND);
-		filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
 		filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
+		filter.addAction(BluetoothDevice.ACTION_FOUND);
+//		filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
 		registerReceiver(bt_receiver, filter);
-	}
-
-	protected void obstacle_arrow(int col, int row, int direction) {
-		ImageView obstacle = new ImageView(this);
-		obstacle.setImageDrawable(new_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
-		obstacle.setBackground(new_drawable(R.drawable.d_box, Cell.OBSTACLE.getColor()));
-		obstacle.setRotation(direction * 90);
-		obstacle.setLayoutParams(new_layoutparams(col, row, 1));
-		grid_maze.addView(obstacle);
 	}
 
 	protected void obstacle_create() { //TODO:REMOVABLE
@@ -358,6 +349,15 @@ public class MainActivity extends AppCompatActivity {
 			tv.setText(String.valueOf(Cell.OBSTACLE.get()));
 			obstacle_list.add(cell);
 		}
+	}
+
+	protected void obstacle_arrow(int col, int row, int direction) {
+		ImageView obstacle = new ImageView(this);
+		obstacle.setImageDrawable(new_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
+		obstacle.setBackground(new_drawable(R.drawable.d_box, Cell.OBSTACLE.getColor()));
+		obstacle.setRotation(direction * 90);
+		obstacle.setLayoutParams(new_layoutparams(col, row, 1));
+		grid_maze.addView(obstacle);
 	}
 
 	protected void robot_go() {
@@ -440,12 +440,7 @@ public class MainActivity extends AppCompatActivity {
 
 				if (bt_adapter.isDiscovering()) bt_adapter.cancelDiscovery();
 				if (bt_display_isfind) {
-					try {
-						bt_newlist.get(position).createBond();
-						sleep(3000);
-					} catch (InterruptedException e) {
-						e.printStackTrace();
-					}
+					bt_newlist.get(position).createBond();
 				} else {
 					bt_device = bt_pairedlist.get(position);
 				}
@@ -521,6 +516,7 @@ public class MainActivity extends AppCompatActivity {
 		} else if (toggle == 0) {
 			bt_adapter.disable();
 			on = false;
+			msg_chatlist.clear();
 		}
 
 		menu.findItem(R.id.menu_bt).setIcon(new_drawable(on ? R.drawable.d_bt_on : R.drawable.d_bt_off, Color.TRANSPARENT));
@@ -543,32 +539,11 @@ public class MainActivity extends AppCompatActivity {
 		bt_connection.start_client(bt_device, BT_UUID);
 	}
 
-	private final BroadcastReceiver bt_receiver = new BroadcastReceiver() { //TODO:TEST
+	private final BroadcastReceiver bt_receiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
-			new_message(getApplicationContext(), action);
 
-			if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
-
-				//
-
-			} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-
-				//
-
-			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-
-				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				if (!bt_newlist.contains(device) && !bt_pairedlist.contains(device) && (device != bt_device)) {
-					bt_newlist.add(device);
-					bt_listview(context, bt_newlist);
-				}
-
-			} else if (BluetoothDevice.ACTION_PAIRING_REQUEST.equals(action)) {
-
-				//
-
-			} else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+			if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
 
 				bt_device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				bt_checkpaired();
@@ -577,11 +552,13 @@ public class MainActivity extends AppCompatActivity {
 
 				bt_device = null;
 				bt_checkpaired();
+				msg_chatlist.clear();
 
 			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
 
 				bt_device = null;
 				bt_checkpaired();
+				msg_chatlist.clear();
 
 			} else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
 
@@ -599,6 +576,16 @@ public class MainActivity extends AppCompatActivity {
 						bt_checkpaired();
 						break;
 				}
+			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+
+				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+				if (!bt_newlist.contains(device) && !bt_pairedlist.contains(device) && (device != bt_device)) {
+					bt_newlist.add(device);
+					bt_listview(context, bt_newlist);
+				}
+
+			} else {
+				new_message(context, action);
 			}
 		}
 	};
@@ -729,7 +716,7 @@ public class MainActivity extends AppCompatActivity {
 
 			findViewById(R.id.time_swt_isfastest).setEnabled(false);
 			findViewById(R.id.time_btn_reset).setEnabled(false);
-			b.setText(R.string.time_pause);
+			b.setText(R.string.time_stop);
 		} else {
 			time_handler.removeCallbacks(time_stopwatch);
 
@@ -804,7 +791,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	protected void display_option() { //TODO:UNKNOWN - HOW TO AUTO?
+	protected void display_option() {
 		SwitchCompat s = findViewById(R.id.display_swt_ismanual);
 		Button b = findViewById(R.id.display_btn_update);
 		if (s.isChecked()) {
@@ -816,16 +803,8 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	protected void display_manual() { //TODO:UNKNOWN - HOW TO MANUAL?
-
-	}
-
 	private View.OnClickListener onClickListener = new View.OnClickListener() {
 		public void onClick(View v) {
-			String title = ""; //TODO:REMOVABLE
-			if (v instanceof Button) title = ((Button) v).getText().toString();
-			else if (v instanceof SwitchCompat) title = ((SwitchCompat) v).getText().toString();
-			((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
 
 			switch (v.getId()) {
 				//ACCELEROMETER
@@ -866,16 +845,19 @@ public class MainActivity extends AppCompatActivity {
 					point_set(false);
 					break;
 
-				//CONFIGURATIONS //TODO:UNKNOWN - WHAT TO DO?
+				//CONFIGURATIONS //TODO:UNKNOWN - WHAT IS CONFIG?
+				case R.id.config_btn_f1:
+					break;
+				case R.id.config_btn_f2:
+					break;
 				case R.id.config_btn_reconfig:
 					break;
 
-				//DISPLAY GRAPHICS //TODO:UNKNOWN - WHAT TO DO?
+				//DISPLAY GRAPHICS //TODO:UNKNOWN - HOW TO MANUAL/AUTO?
 				case R.id.display_swt_ismanual:
 					display_option();
 					break;
 				case R.id.display_btn_update:
-					display_manual();
 					break;
 			}
 		}
@@ -884,7 +866,7 @@ public class MainActivity extends AppCompatActivity {
 	protected void msg_instruction(boolean towrite, Instruction instruction) {
 		if (instruction != null) {
 			if (bt_device != null && towrite) {
-				msg_writemsg(this, instruction.getWriteText());
+				msg_writemsg(this, instruction.getArduino());
 			}
 			switch (instruction) {
 				case FORWARD:
@@ -908,25 +890,36 @@ public class MainActivity extends AppCompatActivity {
 					robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
 					break;
 				case BEGIN_EXPLORATION:
+					if (time_start != 0L) {
+						if (findViewById(R.id.time_btn_stopwatch).isEnabled())
+							findViewById(R.id.time_btn_stopwatch).callOnClick();
+						findViewById(R.id.time_btn_reset).callOnClick();
+					}
 					((SwitchCompat) findViewById(R.id.time_swt_isfastest)).setChecked(false);
-					findViewById(R.id.time_btn_reset).callOnClick();
+					time_option();
 					findViewById(R.id.time_btn_stopwatch).callOnClick();
 					break;
 				case BEGIN_FASTEST_PATH:
+					if (time_start != 0L) {
+						if (findViewById(R.id.time_btn_stopwatch).isEnabled())
+							findViewById(R.id.time_btn_stopwatch).callOnClick();
+						findViewById(R.id.time_btn_reset).callOnClick();
+					}
 					((SwitchCompat) findViewById(R.id.time_swt_isfastest)).setChecked(true);
-					findViewById(R.id.time_btn_reset).callOnClick();
+					time_option();
 					findViewById(R.id.time_btn_stopwatch).callOnClick();
 					break;
 				case SEND_ARENA_INFO:
 					String text = "";
 					for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 						if (!text.equalsIgnoreCase("") && (i % MAZE_C) == 0) {
-							msg_writemsg(this, text);
-							text = "";
+							//msg_writemsg(this, text);
+							text += "\n";
 						}
 
 						text += (((TextView) grid_maze.getChildAt(i)).getText() + " ");
 					}
+					msg_writemsg(this, text);
 					break;
 			}
 		}

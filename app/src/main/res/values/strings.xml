@@ -11,13 +11,12 @@
     <string name="point_header">Set Points</string>
     <string name="config_header">Configurations</string>
 
-    <string name="status_default">No Status</string>
     <string name="tilt_on">On</string>
     <string name="tilt_off">Off</string>
     <string name="time_fastest">Fastest</string>
     <string name="time_explore">Explore</string>
     <string name="time_start">Start</string>
-    <string name="time_pause">Pause</string>
+    <string name="time_stop">Stop</string>
     <string name="time_reset">Reset</string>
     <string name="time_default">0:00:000</string>
     <string name="point_x">X:</string>
@@ -27,6 +26,8 @@
     <string name="display_manual">Manual</string>
     <string name="display_auto">Auto</string>
     <string name="display_update">Update</string>
+    <string name="config_f1">F1</string>
+    <string name="config_f2">F2</string>
     <string name="config_reconfig">Reconfigure</string>
 
     <string name="menu_restart">Restart</string>
@@ -40,4 +41,8 @@
     <string name="bt_paired">Paired Devices</string>
     <string name="msg_send">Send</string>
     <string name="msg_clear">Clear</string>
+
+    <string name="status_default">No Status</string>
+    <string name="status_moving">Robot moving</string>
+    <string name="status_stop">Robot stopped</string>
 </resources>

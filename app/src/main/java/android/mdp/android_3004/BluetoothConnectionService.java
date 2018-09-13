@@ -8,10 +8,14 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
 import android.support.v4.content.LocalBroadcastManager;
+import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Stack;
 import java.util.UUID;
 
 public class BluetoothConnectionService {
@@ -126,7 +130,7 @@ public class BluetoothConnectionService {
 	}
 
 	public class ConnectedThread extends Thread {
-		private final BluetoothSocket socket;
+		private BluetoothSocket socket;
 		private final InputStream stream_in;
 		private final OutputStream stream_out;
 
@@ -137,9 +141,16 @@ public class BluetoothConnectionService {
 
 			try {
 				tmp_in = socket.getInputStream();
+			} catch (IOException e) {
+				e.printStackTrace();
+				Log.e("BT-ERROR", "Failed to create input stream");
+			}
+
+			try {
 				tmp_out = socket.getOutputStream();
 			} catch (IOException e) {
 				e.printStackTrace();
+				Log.e("BT-ERROR", "Failed to create output stream");
 			}
 
 			stream_in = tmp_in;
@@ -166,7 +177,16 @@ public class BluetoothConnectionService {
 		}
 
 		void write(byte[] bytes) {
+			Log.d("TMP", "Socket Conn: " + socket.isConnected());
 			try {
+				stream_out.flush();
+				Log.d("TMP", "K flushed");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			try {
+				//stream_out.write(bytes);
+				Log.d("TMP", "Socket Conn: " + socket.isConnected());
 				stream_out.write(bytes);
 			} catch (IOException e) {
 				e.printStackTrace();
