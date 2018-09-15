@@ -32,11 +32,11 @@ public class ChatListAdapter extends ArrayAdapter<Message> {
 			TextView details = convertView.findViewById(R.id.msg_txt_details);
 			details.setText(message.getDetails());
 
-			Instruction instruction = getInstruction(message.getDetails());
+			Enum.Instruction instruction = getInstruction(message.getDetails());
 			if (instruction != null) {
 				TextView description = convertView.findViewById(R.id.msg_txt_description);
 				description.setVisibility(View.VISIBLE);
-				description.setText(":: " + instruction.getDescription());
+				description.setText("::" + instruction.getDescription());
 			}
 
 			Drawable speech = convertView.getResources().getDrawable(R.drawable.d_speech, null);
@@ -46,8 +46,8 @@ public class ChatListAdapter extends ArrayAdapter<Message> {
 		return convertView;
 	}
 
-	public Instruction getInstruction(String text) {
-		for (Instruction i : Instruction.values()) {
+	public Enum.Instruction getInstruction(String text) {
+		for (Enum.Instruction i : Enum.Instruction.values()) {
 			if (i.getArduino().equalsIgnoreCase(text)) {
 				return i;
 			}

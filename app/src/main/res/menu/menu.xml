@@ -26,6 +26,9 @@
             <item
                 android:id="@+id/menu_bt_find"
                 android:title="@string/bt_find" />
+            <item
+                android:id="@+id/menu_bt_reconnect"
+                android:title="@string/bt_reconnect" />
         </menu>
     </item>
 </menu>
