@@ -105,7 +105,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
-                android:text="@string/time_explore_header"
+                android:text="@string/time_explore_qn"
                 android:textColor="@color/dim_gray"
                 android:textStyle="bold" />
 
@@ -117,7 +117,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="20dp"
-                android:text="@string/time_fastest_header"
+                android:text="@string/time_fastest_qn"
                 android:textColor="@color/dim_gray"
                 android:textStyle="bold" />
 
@@ -180,11 +180,11 @@
                     android:layout_width="wrap_content"
                     android:layout_height="30dp"
                     android:gravity="bottom"
-                    android:text="@string/point_x" />
+                    android:text="@string/point_x_qn" />
 
                 <EditText
                     android:id="@+id/point_txt_x"
-                    style="@style/EditTextStyle"
+                    style="@style/EditTextStyle_Coords"
                     android:layout_width="50dp"
                     android:layout_height="40dp" />
 
@@ -194,11 +194,11 @@
                     android:gravity="bottom"
                     android:paddingEnd="0dp"
                     android:paddingStart="15dp"
-                    android:text="@string/point_y" />
+                    android:text="@string/point_y_qn" />
 
                 <EditText
                     android:id="@+id/point_txt_y"
-                    style="@style/EditTextStyle"
+                    style="@style/EditTextStyle_Coords"
                     android:layout_width="50dp"
                     android:layout_height="40dp" />
             </LinearLayout>

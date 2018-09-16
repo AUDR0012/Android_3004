@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ly_msg"
     android:layout_width="match_parent"
-    android:layout_height="400dp"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="5dp"
     android:paddingEnd="14dp"
@@ -10,12 +10,10 @@
 
     <TextView
         android:id="@+id/msg_lbl_header"
+        style="@style/HeaderStyle"
         android:layout_width="match_parent"
         android:layout_height="30dp"
-        android:gravity="bottom|center_horizontal"
-        android:text="@string/msg_header"
-        android:textAllCaps="true"
-        android:textColor="@color/colorAccent" />
+        android:text="@string/msg_header" />
 
     <ListView
         android:id="@+id/msg_lv_chat"
@@ -25,7 +23,6 @@
         android:padding="10dp" />
 
     <LinearLayout
-        android:id="@+id/ly_data"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:focusable="true"
@@ -33,28 +30,26 @@
         android:orientation="horizontal">
 
         <EditText
-            android:id="@+id/data_txt_msg"
-            android:layout_width="400dp"
+            android:id="@+id/write_txt_msg"
+            android:layout_width="0dp"
             android:layout_height="40dp"
-            android:layout_toStartOf="@id/data_btn_clear" />
+            android:layout_weight="1"
+            android:textSize="16sp" />
+
+        <ImageButton
+            android:id="@+id/write_btn_clear"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="center"
+            android:background="@drawable/d_clear"
+            android:visibility="gone" />
 
         <Button
-            android:id="@+id/data_btn_send"
+            android:id="@+id/write_btn_send"
+            style="@style/ButtonStyle"
             android:layout_width="70dp"
             android:layout_height="40dp"
-            android:text="@string/msg_send"
-            android:textAllCaps="true"
-            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-            android:textSize="14sp" />
-
-        <Button
-            android:id="@+id/data_btn_clear"
-            android:layout_width="70dp"
-            android:layout_height="40dp"
-            android:text="@string/msg_clear"
-            android:textAllCaps="true"
-            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-            android:textSize="14sp" />
+            android:text="@string/msg_send" />
 
     </LinearLayout>
 
