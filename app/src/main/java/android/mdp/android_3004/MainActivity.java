@@ -1,5 +1,6 @@
 package android.mdp.android_3004;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -17,7 +18,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -29,7 +29,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
@@ -38,18 +37,17 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.nio.charset.Charset;
+import org.w3c.dom.Text;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
 
-import static java.lang.Thread.sleep;
-
 public class MainActivity extends AppCompatActivity {
 
-	private final UUID BT_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+	private final UUID THIS_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	final int MAZE_C = 15;
 	final int MAZE_R = 20;
 	final int ROBOT_SIZE = 3;
@@ -65,17 +63,17 @@ public class MainActivity extends AppCompatActivity {
 	Menu menu;
 	LayoutInflater inflater;
 
+	BluetoothDevice bt_device;
 	BluetoothAdapter bt_adapter = BluetoothAdapter.getDefaultAdapter();
-	ArrayList<BluetoothDevice> bt_newlist = new ArrayList<>(), bt_pairedlist = new ArrayList<>();
 	ListView bt_lv_device;
+	ArrayList<BluetoothDevice> bt_newlist = new ArrayList<>(), bt_pairedlist = new ArrayList<>();
 	DeviceListAdapter bt_listadapter;
 	BluetoothConnectionService bt_connection;
-	BluetoothDevice bt_device;
 	boolean bt_display_isfind;
 
 	ListView msg_lv_chat, msg_lv_preview;
 	ArrayList<Message> msg_chatlist = new ArrayList<>();
-	ArrayAdapter msg_listadapter;
+	ChatListAdapter msg_listadapter;
 
 	SensorManager sensor_manager;
 	Sensor accelerometer_sensor;
@@ -96,9 +94,7 @@ public class MainActivity extends AppCompatActivity {
 
 		bt_getpaired();
 		reg_bt_intentfilter();
-		LocalBroadcastManager.getInstance(this).registerReceiver(bt_msg_receiver, new IntentFilter("messaging"));
 		msg_lv_preview = findViewById(R.id.msg_lv_preview);
-		//msg_lv_chat = findViewById(R.id.msg_lv_chat);
 
 //		========== CLICKABLE CONTROLS ==========
 		int[] list_onclick = {R.id.tilt_swt_isoff,
@@ -137,18 +133,18 @@ public class MainActivity extends AppCompatActivity {
 		grid_maze.setColumnCount(MAZE_C);
 		grid_maze.setRowCount(MAZE_R);
 
-		Drawable box = new_drawable(R.drawable.d_box, Cell.DEFAULT.getColor());
+		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.DEFAULT.getColor());
 		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 			TextView tv = new TextView(this);
 			tv.setGravity(Gravity.CENTER);
 			tv.setBackground(box);
-			tv.setText(String.valueOf(Cell.DEFAULT.get()));
+			tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
 
 			grid_maze.addView(tv);
 		}
 
 //		obstacle_create(); //TODO:REMOVABLE
-//		obstacle_arrow(obstacle_list.get(0) % MAZE_C, obstacle_list.get(0) / MAZE_C, Direction.UP.get()); //TODO:REMOVABLE
+//		obstacle_arrow(obstacle_list.get(0) % MAZE_C, obstacle_list.get(0) / MAZE_C, Enum.Direction.UP.get()); //TODO:REMOVABLE
 
 //		========== ACCELEROMETER ==========
 		sensor_manager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -174,11 +170,16 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	public void onPause() {
 		if (bt_adapter.isDiscovering()) bt_adapter.cancelDiscovery();
+//		if (bt_connection != null) bt_connection.disconnect(); //TODO:CLOSE?
 		super.onPause();
 	}
 
 	@Override
 	public void onResume() {
+//		if (bt_connection == null) {
+//			BluetoothDevice btd = getIntent().getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+//			bt_startconnection(btd);
+//		}//TODO:RECONNECT
 		bt_update(-1);
 		super.onResume();
 	}
@@ -229,10 +230,25 @@ public class MainActivity extends AppCompatActivity {
 				});
 				bt_dialog.show();
 				return true;
+			case R.id.menu_bt_reconnect:
+				//TODO:RECONNECT
+				return true;
 
 			default:
 				return super.onOptionsItemSelected(item);
 		}
+	}
+
+	protected String R_string(int id) {
+		return getResources().getString(id);
+	}
+
+	protected String View_string(View v) {
+		if (v instanceof TextView)
+			return ((TextView) v).getText().toString();
+		else if (v instanceof Button)
+			return ((Button) v).getText().toString();
+		return null;
 	}
 
 	protected void new_message(Context context, String message) {
@@ -256,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	protected int enum_getcolor(int id) {
-		for (Cell c : Cell.values()) {
+		for (Enum.Cell c : Enum.Cell.values()) {
 			if (c.get() == id) {
 				return c.getColor();
 			}
@@ -264,8 +280,8 @@ public class MainActivity extends AppCompatActivity {
 		return -1;
 	}
 
-	protected Direction enum_getdirection(int id) {
-		for (Direction d : Direction.values()) {
+	protected Enum.Direction enum_getdirection(int id) {
+		for (Enum.Direction d : Enum.Direction.values()) {
 			if (d.get() == id) {
 				return d;
 			}
@@ -273,10 +289,28 @@ public class MainActivity extends AppCompatActivity {
 		return null;
 	}
 
-	protected Instruction enum_getinstruction(String arduino) {
-		for (Instruction i : Instruction.values()) {
+	protected Enum.Instruction enum_getinstruction(String arduino) {
+		for (Enum.Instruction i : Enum.Instruction.values()) {
 			if (i.getArduino().equalsIgnoreCase(arduino)) {
 				return i;
+			}
+		}
+		return null;
+	}
+
+	protected Enum.State enum_state(int id) {
+		for (Enum.State s : Enum.State.values()) {
+			if (s.get() == id) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+	protected Enum.Handling enum_handling(int id) {
+		for (Enum.Handling h : Enum.Handling.values()) {
+			if (h.get() == id) {
+				return h;
 			}
 		}
 		return null;
@@ -288,6 +322,7 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void reset_app() {
 		reset_cells();
+		bt_connection = new BluetoothConnectionService(this, msg_handler);
 
 		way_point = -1;
 		robot_location = cell_id(START_COL, START_ROW);
@@ -302,19 +337,19 @@ public class MainActivity extends AppCompatActivity {
 		((TextView) findViewById(R.id.time_txt_fastest)).setText(R.string.time_default);
 		time_option();
 
-		((EditText) findViewById(R.id.point_txt_x)).setText("");
-		((EditText) findViewById(R.id.point_txt_y)).setText("");
+		((EditText) findViewById(R.id.point_txt_x)).setText(R.string._null);
+		((EditText) findViewById(R.id.point_txt_y)).setText(R.string._null);
 
 		display_option();
 	}
 
 	protected void reset_cells() {
-		Drawable box = new_drawable(R.drawable.d_box, Cell.DEFAULT.getColor());
+		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.DEFAULT.getColor());
 
 		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 			TextView tv = (TextView) grid_maze.getChildAt(i);
-			if (Integer.valueOf(tv.getText().toString()) == Cell.PASSED.get()) {
-				tv.setText(String.valueOf(Cell.DEFAULT.get()));
+			if (Integer.valueOf(View_string(tv)) == Enum.Cell.PASSED.get()) {
+				tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
 				tv.setBackground(box);
 			}
 		}
@@ -322,21 +357,21 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void reg_bt_intentfilter() {
 		IntentFilter filter = new IntentFilter();
-//		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		filter.addAction(BluetoothDevice.ACTION_FOUND);
-//		filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
+		filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
 		registerReceiver(bt_receiver, filter);
 	}
 
 	protected void obstacle_create() { //TODO:REMOVABLE
 		int cell, count = (new Random()).nextInt(10) + 10;
 
-		Drawable box = new_drawable(R.drawable.d_box, Cell.OBSTACLE.getColor());
+		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.OBSTACLE.getColor());
 		TextView tv;
 		for (int i = 0; i < count; i++) {
 			cell = (new Random()).nextInt(210) + 45;
@@ -346,7 +381,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 			tv = (TextView) grid_maze.getChildAt(cell);
 			tv.setBackground(box);
-			tv.setText(String.valueOf(Cell.OBSTACLE.get()));
+			tv.setText(String.valueOf(Enum.Cell.OBSTACLE.get()));
 			obstacle_list.add(cell);
 		}
 	}
@@ -354,7 +389,7 @@ public class MainActivity extends AppCompatActivity {
 	protected void obstacle_arrow(int col, int row, int direction) {
 		ImageView obstacle = new ImageView(this);
 		obstacle.setImageDrawable(new_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
-		obstacle.setBackground(new_drawable(R.drawable.d_box, Cell.OBSTACLE.getColor()));
+		obstacle.setBackground(new_drawable(R.drawable.d_box, Enum.Cell.OBSTACLE.getColor()));
 		obstacle.setRotation(direction * 90);
 		obstacle.setLayoutParams(new_layoutparams(col, row, 1));
 		grid_maze.addView(obstacle);
@@ -371,7 +406,7 @@ public class MainActivity extends AppCompatActivity {
 			col = robot_location % MAZE_C;
 		robot.setLayoutParams(new_layoutparams(col, row, ROBOT_SIZE));
 
-		Drawable box = new_drawable(R.drawable.d_box, Cell.PASSED.getColor());
+		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.PASSED.getColor());
 		TextView tv;
 		for (int r = row; r < row + ROBOT_SIZE; r++) {
 			for (int c = col; c < col + ROBOT_SIZE; c++) {
@@ -380,7 +415,7 @@ public class MainActivity extends AppCompatActivity {
 				if (cell != way_point) {
 					tv.setBackground(box);
 				}
-				tv.setText(String.valueOf(Cell.PASSED.get()));
+				tv.setText(String.valueOf(Enum.Cell.PASSED.get()));
 			}
 		}
 	}
@@ -389,7 +424,7 @@ public class MainActivity extends AppCompatActivity {
 		robot.setRotation(robot.getRotation() + (direction * 90));
 	}
 
-	protected void robot_move(Direction direction) {
+	protected void robot_move(Enum.Direction direction) {
 		int temp_location = robot_location,
 			col = robot_location % MAZE_C,
 			row = robot_location / MAZE_C;
@@ -442,9 +477,8 @@ public class MainActivity extends AppCompatActivity {
 				if (bt_display_isfind) {
 					bt_newlist.get(position).createBond();
 				} else {
-					bt_device = bt_pairedlist.get(position);
+					bt_connection.connect(bt_pairedlist.get(position));
 				}
-				bt_checkpaired();
 			}
 		});
 		v.findViewById(R.id.bt_btn_find).setOnClickListener(new View.OnClickListener() {
@@ -483,19 +517,21 @@ public class MainActivity extends AppCompatActivity {
 		for (BluetoothDevice bd : set) {
 			bt_pairedlist.add(bd);
 		}
+
+		if (bt_pairedlist.size() == 0) {
+			new_message(this, "There are no paired devices");
+		}
 	}
 
 	protected void bt_checkpaired() {
 		if (bt_device == null) {
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_no);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.INVISIBLE);
-			((TextView) findViewById(R.id.bt_txt_connected)).setText("");
+			((TextView) findViewById(R.id.bt_txt_connected)).setText(R.string._null);
 
 			findViewById(R.id.msg_lv_preview).setVisibility(View.INVISIBLE);
 			findViewById(R.id.msg_temp).setVisibility(View.INVISIBLE);
 		} else {
-			bt_startconnection();
-
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_yes);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(bt_device.getName());
@@ -516,7 +552,6 @@ public class MainActivity extends AppCompatActivity {
 		} else if (toggle == 0) {
 			bt_adapter.disable();
 			on = false;
-			msg_chatlist.clear();
 		}
 
 		menu.findItem(R.id.menu_bt).setIcon(new_drawable(on ? R.drawable.d_bt_on : R.drawable.d_bt_off, Color.TRANSPARENT));
@@ -534,33 +569,11 @@ public class MainActivity extends AppCompatActivity {
 		startActivity(indent_ACTION_REQUEST_DISCOVERABLE);
 	}
 
-	protected void bt_startconnection() {
-		bt_connection = new BluetoothConnectionService(this);
-		bt_connection.start_client(bt_device, BT_UUID);
-	}
-
 	private final BroadcastReceiver bt_receiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 
-			if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-
-				bt_device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				bt_checkpaired();
-
-			} else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
-
-				bt_device = null;
-				bt_checkpaired();
-				msg_chatlist.clear();
-
-			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
-
-				bt_device = null;
-				bt_checkpaired();
-				msg_chatlist.clear();
-
-			} else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+			if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
 
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				switch (device.getBondState()) {
@@ -572,8 +585,9 @@ public class MainActivity extends AppCompatActivity {
 						break;
 					case BluetoothDevice.BOND_BONDED:
 						new_message(getApplicationContext(), "BOND_BONDED");
-						bt_device = device;
-						bt_checkpaired();
+						bt_connection.connect(device);
+//						bt_device = device;
+//						bt_checkpaired();
 						break;
 				}
 			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
@@ -599,24 +613,16 @@ public class MainActivity extends AppCompatActivity {
 		v.findViewById(R.id.data_btn_send).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				msg_writemsg(v.getContext(), tv.getText().toString());
+				bt_connection.write(View_string(tv).getBytes());
 			}
 		});
 		v.findViewById(R.id.data_btn_clear).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				tv.setText("");
+				tv.setText(R.string._null);
 			}
 		});
 		return new AlertDialog.Builder(this).setView(v);
-	}
-
-	protected void msg_writemsg(Context context, String text) {
-		byte[] bytes = text.getBytes(Charset.defaultCharset());
-		bt_connection.write(bytes);
-
-		msg_chatlist.add(new Message(false, text, getResources()));
-		msg_listview(context);
 	}
 
 	protected void msg_listview(Context context) {
@@ -646,17 +652,6 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	private final BroadcastReceiver bt_msg_receiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			String text = intent.getStringExtra("read message");
-			msg_chatlist.add(new Message(true, text, getResources()));
-			msg_listview(getApplicationContext());
-
-			msg_instruction(false, enum_getinstruction(text));
-		}
-	};
-
 	protected void tilt_option() {
 		SwitchCompat s = findViewById(R.id.tilt_swt_isoff);
 		if (s.isChecked()) {
@@ -670,29 +665,20 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void tilt_move(float x, float y) { //TODO:SENDING/MOVING ISSUE
 		if (x > 0.5f) { //MOVE LEFT
-			tilt_turn(Direction.LEFT.get());
+			robot_move(Enum.Direction.LEFT);
 		}
 		if (x < -0.5f) { //MOVE RIGHT
-			tilt_turn(Direction.RIGHT.get());
+			robot_move(Enum.Direction.RIGHT);
 		}
 		if (y > 0.5f) { //MOVE DOWN
-			tilt_turn(Direction.UP.get());
+			robot_move(Enum.Direction.DOWN);
 		}
 		if (y < -0.5f) { //MOVE UP
-			tilt_turn(Direction.DOWN.get());
+			robot_move(Enum.Direction.UP);
 		}
 
 		if (x > 0.5f || x < -0.5f || y > 0.5f || y < -0.5f) {
-			msg_instruction(true, Instruction.FORWARD);
-		}
-	}
-
-	protected void tilt_turn(int direction) {
-		int rotation = (((int) robot.getRotation()) % 360) / 90;
-
-		while (rotation == direction) {
-			rotation = (((int) robot.getRotation()) % 360) / 90;
-			msg_instruction(true, Instruction.ROTATE_RIGHT);
+			msg_instruction(true, Enum.Instruction.FORWARD);
 		}
 	}
 
@@ -705,12 +691,12 @@ public class MainActivity extends AppCompatActivity {
 			s.setText(R.string.time_explore);
 			time_textview = findViewById(R.id.time_txt_explore);
 		}
-		findViewById(R.id.time_btn_stopwatch).setEnabled(time_textview.getText().toString().equalsIgnoreCase(getResources().getString(R.string.time_default)));
+		findViewById(R.id.time_btn_stopwatch).setEnabled(View_string(time_textview).equalsIgnoreCase(getResources().getString(R.string.time_default)));
 	}
 
 	protected void time_stopwatch(View v) {
 		Button b = (Button) v;
-		if (b.getText().toString().equalsIgnoreCase(getResources().getString(R.string.time_start))) {
+		if (View_string(b).equalsIgnoreCase(getResources().getString(R.string.time_start))) {
 			time_start = SystemClock.uptimeMillis();
 			time_handler.postDelayed(time_stopwatch, 0);
 
@@ -749,9 +735,9 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void point_set(boolean origin) {
 		//COMMON VALIDITY CHECK (1)
-		String point_x = ((TextView) findViewById(R.id.point_txt_x)).getText().toString(),
-			point_y = ((TextView) findViewById(R.id.point_txt_y)).getText().toString();
-		if (point_x.equalsIgnoreCase("") || point_y.equalsIgnoreCase("")) {
+		String point_x = View_string(findViewById(R.id.point_txt_x)),
+			point_y = View_string(findViewById(R.id.point_txt_y));
+		if (point_x.equalsIgnoreCase(R_string(R.string._null)) || point_y.equalsIgnoreCase(R_string(R.string._null))) {
 			new_message(this, "Please fill in the text fields.");
 			return;
 		}
@@ -781,10 +767,10 @@ public class MainActivity extends AppCompatActivity {
 			}
 
 			if (way_point > -1) {
-				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(((TextView) grid_maze.getChildAt(way_point)).getText().toString())));
+				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(View_string(grid_maze.getChildAt(way_point)))));
 				grid_maze.getChildAt(way_point).setBackground(box);
 			}
-			box = new_drawable(R.drawable.d_box, Cell.WAYPOINT.getColor());
+			box = new_drawable(R.drawable.d_box, Enum.Cell.WAYPOINT.getColor());
 			grid_maze.getChildAt(cell).setBackground(box);
 
 			way_point = cell;
@@ -814,16 +800,16 @@ public class MainActivity extends AppCompatActivity {
 
 				//MAZE
 				case R.id.direction_btn_up:
-					msg_instruction(true, Instruction.FORWARD);
+					msg_instruction(true, Enum.Instruction.FORWARD);
 					break;
 				case R.id.direction_btn_down:
-					msg_instruction(true, Instruction.REVERSE);
+					msg_instruction(true, Enum.Instruction.REVERSE);
 					break;
 				case R.id.direction_btn_left:
-					msg_instruction(true, Instruction.ROTATE_LEFT);
+					msg_instruction(true, Enum.Instruction.ROTATE_LEFT);
 					break;
 				case R.id.direction_btn_right:
-					msg_instruction(true, Instruction.ROTATE_RIGHT);
+					msg_instruction(true, Enum.Instruction.ROTATE_RIGHT);
 					break;
 
 				//STOPWATCH
@@ -847,8 +833,10 @@ public class MainActivity extends AppCompatActivity {
 
 				//CONFIGURATIONS //TODO:UNKNOWN - WHAT IS CONFIG?
 				case R.id.config_btn_f1:
+//					bt_connection.disconnect();
 					break;
 				case R.id.config_btn_f2:
+					bt_checkpaired();
 					break;
 				case R.id.config_btn_reconfig:
 					break;
@@ -863,10 +851,10 @@ public class MainActivity extends AppCompatActivity {
 		}
 	};
 
-	protected void msg_instruction(boolean towrite, Instruction instruction) {
+	protected void msg_instruction(boolean towrite, Enum.Instruction instruction) {
 		if (instruction != null) {
 			if (bt_device != null && towrite) {
-				msg_writemsg(this, instruction.getArduino());
+				bt_connection.write(instruction.getArduino().getBytes());
 			}
 			switch (instruction) {
 				case FORWARD:
@@ -876,17 +864,17 @@ public class MainActivity extends AppCompatActivity {
 					robot_move(enum_getdirection((((int) (robot.getRotation() + 180)) % 360) / 90));
 					break;
 				case ROTATE_LEFT:
-					robot_rotate(Direction.LEFT.get());
+					robot_rotate(Enum.Direction.LEFT.get());
 					break;
 				case ROTATE_RIGHT:
-					robot_rotate(Direction.RIGHT.get());
+					robot_rotate(Enum.Direction.RIGHT.get());
 					break;
 				case STRAFE_LEFT:
-					robot_rotate(Direction.LEFT.get());
+					robot_rotate(Enum.Direction.LEFT.get());
 					robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
 					break;
 				case STRAFE_RIGHT:
-					robot_rotate(Direction.RIGHT.get());
+					robot_rotate(Enum.Direction.RIGHT.get());
 					robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
 					break;
 				case BEGIN_EXPLORATION:
@@ -910,18 +898,61 @@ public class MainActivity extends AppCompatActivity {
 					findViewById(R.id.time_btn_stopwatch).callOnClick();
 					break;
 				case SEND_ARENA_INFO:
-					String text = "";
+					String text = R_string(R.string._null);
 					for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-						if (!text.equalsIgnoreCase("") && (i % MAZE_C) == 0) {
-							//msg_writemsg(this, text);
+						if (!text.equalsIgnoreCase(R_string(R.string._null)) && (i % MAZE_C) == 0) {
 							text += "\n";
 						}
-
 						text += (((TextView) grid_maze.getChildAt(i)).getText() + " ");
 					}
-					msg_writemsg(this, text);
+					bt_connection.write(text.getBytes());
 					break;
 			}
 		}
 	}
+
+	@SuppressLint("HandlerLeak")
+	private final Handler msg_handler = new Handler() {
+		@Override
+		public void handleMessage(android.os.Message msg) {
+			String text;
+			switch (enum_handling(msg.what)) {
+				case STATE_CHANGE:
+					TextView tv = findViewById(R.id.txt_status);
+					tv.setText("State"+msg.arg1);
+					switch (enum_state(msg.arg1)) {
+						case NONE:
+							break;
+						case LISTEN:
+							break;
+						case CONNECTING:
+							break;
+						case CONNECTED:
+							msg_chatlist.clear();
+							break;
+					}
+					break;
+				case WRITE_MSG:
+					text = new String((byte[]) msg.obj);
+					msg_chatlist.add(new Message(false, text, getResources()));
+					msg_listview(getApplicationContext());
+					break;
+				case READ_MSG:
+					text = new String((byte[]) msg.obj, 0, msg.arg1);
+					msg_chatlist.add(new Message(true, text, getResources()));
+					msg_listview(getApplicationContext());
+
+					msg_instruction(false, enum_getinstruction(text));
+					break;
+				case BT_NAME:
+					text = msg.getData().getString(Enum.Handling.BT_NAME.getDesc());
+					new_message(getApplicationContext(), text);
+					bt_device = bt_adapter.getRemoteDevice(text);
+					break;
+				case TOAST:
+					new_message(getApplicationContext(), msg.getData().getString(Enum.Handling.TOAST.getDesc()));
+					break;
+			}
+		}
+	};
 }
