@@ -2,7 +2,7 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ly_bt"
     android:layout_width="match_parent"
-    android:layout_height="400dp"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="5dp"
     android:paddingEnd="14dp"
@@ -10,12 +10,10 @@
 
     <TextView
         android:id="@+id/bt_lbl_header"
+        style="@style/HeaderStyle"
         android:layout_width="match_parent"
         android:layout_height="30dp"
-        android:gravity="bottom|center_horizontal"
-        android:text="@string/bt_header"
-        android:textAllCaps="true"
-        android:textColor="@color/colorAccent" />
+        android:text="@string/bt_header" />
 
     <ListView
         android:id="@+id/bt_lv_devices"
@@ -30,23 +28,19 @@
 
         <Button
             android:id="@+id/bt_btn_find"
+            style="@style/ButtonStyle"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:text="@string/bt_find"
-            android:textAllCaps="true"
-            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-            android:textSize="14sp" />
+            android:text="@string/bt_find" />
 
         <Button
             android:id="@+id/bt_btn_paired"
+            style="@style/ButtonStyle"
             android:layout_width="0dp"
             android:layout_height="40dp"
             android:layout_weight="1"
-            android:text="@string/bt_paired"
-            android:textAllCaps="true"
-            android:textAppearance="@android:style/TextAppearance.DeviceDefault.Small"
-            android:textSize="14sp" />
+            android:text="@string/bt_paired" />
 
     </LinearLayout>
 
