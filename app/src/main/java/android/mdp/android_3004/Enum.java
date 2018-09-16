@@ -78,45 +78,4 @@ public class Enum {
 			arduino = text;
 		}
 	}
-
-	public enum State {
-		NONE(0),
-		LISTEN(1),
-		CONNECTING(2),
-		CONNECTED(3);
-
-		State(int id) {
-			this.id = id;
-		}
-
-		private int id;
-
-		public int get() {
-			return id;
-		}
-	}
-
-	public enum Handling {
-		STATE_CHANGE(0, "STATE_CHANGE"),
-		READ_MSG(1, "READ_MSG"),
-		WRITE_MSG(2, "WRITE_MSG"),
-		BT_NAME(3, "BT_NAME"),
-		TOAST(4, "TOAST");
-
-		Handling(int id, String desc) {
-			this.id = id;
-			this.desc = desc;
-		}
-
-		private int id;
-		private String desc;
-
-		public int get() {
-			return id;
-		}
-
-		public String getDesc() {
-			return desc;
-		}
-	}
 }

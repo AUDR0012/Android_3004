@@ -1,6 +1,5 @@
 package android.mdp.android_3004;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -8,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -16,12 +16,14 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.SwitchCompat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,6 +31,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.GridLayout;
@@ -37,8 +40,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.w3c.dom.Text;
-
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -47,7 +49,6 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-	private final UUID THIS_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	final int MAZE_C = 15;
 	final int MAZE_R = 20;
 	final int ROBOT_SIZE = 3;
@@ -63,17 +64,18 @@ public class MainActivity extends AppCompatActivity {
 	Menu menu;
 	LayoutInflater inflater;
 
-	BluetoothDevice bt_device;
 	BluetoothAdapter bt_adapter = BluetoothAdapter.getDefaultAdapter();
-	ListView bt_lv_device;
 	ArrayList<BluetoothDevice> bt_newlist = new ArrayList<>(), bt_pairedlist = new ArrayList<>();
+	ListView bt_lv_device;
 	DeviceListAdapter bt_listadapter;
-	BluetoothConnectionService bt_connection;
+	BluetoothConnectionService bt_connection = null;
+	BluetoothDevice bt_device;
+	String bt_prev_addr;
 	boolean bt_display_isfind;
 
 	ListView msg_lv_chat, msg_lv_preview;
 	ArrayList<Message> msg_chatlist = new ArrayList<>();
-	ChatListAdapter msg_listadapter;
+	ArrayAdapter msg_listadapter;
 
 	SensorManager sensor_manager;
 	Sensor accelerometer_sensor;
@@ -94,7 +96,9 @@ public class MainActivity extends AppCompatActivity {
 
 		bt_getpaired();
 		reg_bt_intentfilter();
+		LocalBroadcastManager.getInstance(this).registerReceiver(bt_msg_receiver, new IntentFilter("messaging"));
 		msg_lv_preview = findViewById(R.id.msg_lv_preview);
+		//msg_lv_chat = findViewById(R.id.msg_lv_chat);
 
 //		========== CLICKABLE CONTROLS ==========
 		int[] list_onclick = {R.id.tilt_swt_isoff,
@@ -170,16 +174,11 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	public void onPause() {
 		if (bt_adapter.isDiscovering()) bt_adapter.cancelDiscovery();
-//		if (bt_connection != null) bt_connection.disconnect(); //TODO:CLOSE?
 		super.onPause();
 	}
 
 	@Override
 	public void onResume() {
-//		if (bt_connection == null) {
-//			BluetoothDevice btd = getIntent().getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-//			bt_startconnection(btd);
-//		}//TODO:RECONNECT
 		bt_update(-1);
 		super.onResume();
 	}
@@ -202,8 +201,6 @@ public class MainActivity extends AppCompatActivity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		String title = item.getTitle().toString();
-		((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
 		switch (item.getItemId()) {
 			//RESTART
 			case R.id.menu_restart:
@@ -231,7 +228,9 @@ public class MainActivity extends AppCompatActivity {
 				bt_dialog.show();
 				return true;
 			case R.id.menu_bt_reconnect:
-				//TODO:RECONNECT
+				if (!r_string(R.string._null).equalsIgnoreCase(bt_prev_addr))
+					bt_device = bt_adapter.getRemoteDevice(bt_prev_addr);
+				bt_checkpaired();
 				return true;
 
 			default:
@@ -239,11 +238,11 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	protected String R_string(int id) {
+	protected String r_string(int id) {
 		return getResources().getString(id);
 	}
 
-	protected String View_string(View v) {
+	protected String view_string(View v) {
 		if (v instanceof TextView)
 			return ((TextView) v).getText().toString();
 		else if (v instanceof Button)
@@ -298,38 +297,21 @@ public class MainActivity extends AppCompatActivity {
 		return null;
 	}
 
-	protected Enum.State enum_state(int id) {
-		for (Enum.State s : Enum.State.values()) {
-			if (s.get() == id) {
-				return s;
-			}
-		}
-		return null;
-	}
-
-	protected Enum.Handling enum_handling(int id) {
-		for (Enum.Handling h : Enum.Handling.values()) {
-			if (h.get() == id) {
-				return h;
-			}
-		}
-		return null;
-	}
-
 	protected int cell_id(int col, int row) {
 		return (row * MAZE_C) + col;
 	}
 
 	protected void reset_app() {
+		if (bt_connection == null)
+			bt_connection = new BluetoothConnectionService(this);
+		bt_update(-1);
+		bt_checkpaired();
+
 		reset_cells();
-		bt_connection = new BluetoothConnectionService(this, msg_handler);
 
 		way_point = -1;
 		robot_location = cell_id(START_COL, START_ROW);
 		robot_go();
-
-		bt_update(-1);
-		bt_checkpaired();
 
 		tilt_option();
 
@@ -337,8 +319,8 @@ public class MainActivity extends AppCompatActivity {
 		((TextView) findViewById(R.id.time_txt_fastest)).setText(R.string.time_default);
 		time_option();
 
-		((EditText) findViewById(R.id.point_txt_x)).setText(R.string._null);
-		((EditText) findViewById(R.id.point_txt_y)).setText(R.string._null);
+		((EditText) findViewById(R.id.point_txt_x)).setText(r_string(R.string._null));
+		((EditText) findViewById(R.id.point_txt_y)).setText(r_string(R.string._null));
 
 		display_option();
 	}
@@ -348,7 +330,7 @@ public class MainActivity extends AppCompatActivity {
 
 		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 			TextView tv = (TextView) grid_maze.getChildAt(i);
-			if (Integer.valueOf(View_string(tv)) == Enum.Cell.PASSED.get()) {
+			if (Integer.valueOf(view_string(tv)) == Enum.Cell.PASSED.get()) {
 				tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
 				tv.setBackground(box);
 			}
@@ -477,7 +459,8 @@ public class MainActivity extends AppCompatActivity {
 				if (bt_display_isfind) {
 					bt_newlist.get(position).createBond();
 				} else {
-					bt_connection.connect(bt_pairedlist.get(position));
+					bt_device = bt_pairedlist.get(position);
+					bt_checkpaired();
 				}
 			}
 		});
@@ -527,11 +510,13 @@ public class MainActivity extends AppCompatActivity {
 		if (bt_device == null) {
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_no);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.INVISIBLE);
-			((TextView) findViewById(R.id.bt_txt_connected)).setText(R.string._null);
+			((TextView) findViewById(R.id.bt_txt_connected)).setText(r_string(R.string._null));
 
 			findViewById(R.id.msg_lv_preview).setVisibility(View.INVISIBLE);
 			findViewById(R.id.msg_temp).setVisibility(View.INVISIBLE);
 		} else {
+			bt_connection.start_client(bt_device);
+
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_yes);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(bt_device.getName());
@@ -552,6 +537,7 @@ public class MainActivity extends AppCompatActivity {
 		} else if (toggle == 0) {
 			bt_adapter.disable();
 			on = false;
+			msg_chatlist.clear();
 		}
 
 		menu.findItem(R.id.menu_bt).setIcon(new_drawable(on ? R.drawable.d_bt_on : R.drawable.d_bt_off, Color.TRANSPARENT));
@@ -573,7 +559,29 @@ public class MainActivity extends AppCompatActivity {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 
-			if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+			if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+
+				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+				if (bt_device != device) {
+					bt_device = device;
+					bt_checkpaired();
+				}
+
+			} else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
+
+				bt_prev_addr = bt_device.getAddress();
+				bt_device = null;
+				bt_checkpaired();
+				msg_chatlist.clear();
+
+			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+
+				bt_prev_addr = bt_device.getAddress();
+				bt_device = null;
+				bt_checkpaired();
+				msg_chatlist.clear();
+
+			} else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
 
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				switch (device.getBondState()) {
@@ -585,9 +593,8 @@ public class MainActivity extends AppCompatActivity {
 						break;
 					case BluetoothDevice.BOND_BONDED:
 						new_message(getApplicationContext(), "BOND_BONDED");
-						bt_connection.connect(device);
-//						bt_device = device;
-//						bt_checkpaired();
+						bt_device = device;
+						bt_checkpaired();
 						break;
 				}
 			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
@@ -613,16 +620,24 @@ public class MainActivity extends AppCompatActivity {
 		v.findViewById(R.id.data_btn_send).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				bt_connection.write(View_string(tv).getBytes());
+				msg_writemsg(v.getContext(), view_string(tv));
 			}
 		});
 		v.findViewById(R.id.data_btn_clear).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				tv.setText(R.string._null);
+				tv.setText(r_string(R.string._null));
 			}
 		});
 		return new AlertDialog.Builder(this).setView(v);
+	}
+
+	protected void msg_writemsg(Context context, String text) {
+		byte[] bytes = text.getBytes(Charset.defaultCharset());
+		bt_connection.write(bytes);
+
+		msg_chatlist.add(new Message(false, text, getResources()));
+		msg_listview(context);
 	}
 
 	protected void msg_listview(Context context) {
@@ -652,6 +667,17 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
+	private final BroadcastReceiver bt_msg_receiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String text = intent.getStringExtra("read message");
+			msg_chatlist.add(new Message(true, text, getResources()));
+			msg_listview(getApplicationContext());
+
+			msg_instruction(false, enum_getinstruction(text));
+		}
+	};
+
 	protected void tilt_option() {
 		SwitchCompat s = findViewById(R.id.tilt_swt_isoff);
 		if (s.isChecked()) {
@@ -676,10 +702,6 @@ public class MainActivity extends AppCompatActivity {
 		if (y < -0.5f) { //MOVE UP
 			robot_move(Enum.Direction.UP);
 		}
-
-		if (x > 0.5f || x < -0.5f || y > 0.5f || y < -0.5f) {
-			msg_instruction(true, Enum.Instruction.FORWARD);
-		}
 	}
 
 	protected void time_option() {
@@ -691,12 +713,12 @@ public class MainActivity extends AppCompatActivity {
 			s.setText(R.string.time_explore);
 			time_textview = findViewById(R.id.time_txt_explore);
 		}
-		findViewById(R.id.time_btn_stopwatch).setEnabled(View_string(time_textview).equalsIgnoreCase(getResources().getString(R.string.time_default)));
+		findViewById(R.id.time_btn_stopwatch).setEnabled(view_string(time_textview).equalsIgnoreCase(r_string(R.string.time_default)));
 	}
 
 	protected void time_stopwatch(View v) {
 		Button b = (Button) v;
-		if (View_string(b).equalsIgnoreCase(getResources().getString(R.string.time_start))) {
+		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_start))) {
 			time_start = SystemClock.uptimeMillis();
 			time_handler.postDelayed(time_stopwatch, 0);
 
@@ -735,9 +757,9 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void point_set(boolean origin) {
 		//COMMON VALIDITY CHECK (1)
-		String point_x = View_string(findViewById(R.id.point_txt_x)),
-			point_y = View_string(findViewById(R.id.point_txt_y));
-		if (point_x.equalsIgnoreCase(R_string(R.string._null)) || point_y.equalsIgnoreCase(R_string(R.string._null))) {
+		String point_x = view_string(findViewById(R.id.point_txt_x)),
+			point_y = view_string(findViewById(R.id.point_txt_y));
+		if (point_x.equalsIgnoreCase(r_string(R.string._null)) || point_y.equalsIgnoreCase(r_string(R.string._null))) {
 			new_message(this, "Please fill in the text fields.");
 			return;
 		}
@@ -767,7 +789,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 
 			if (way_point > -1) {
-				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(View_string(grid_maze.getChildAt(way_point)))));
+				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(view_string(grid_maze.getChildAt(way_point)))));
 				grid_maze.getChildAt(way_point).setBackground(box);
 			}
 			box = new_drawable(R.drawable.d_box, Enum.Cell.WAYPOINT.getColor());
@@ -833,10 +855,8 @@ public class MainActivity extends AppCompatActivity {
 
 				//CONFIGURATIONS //TODO:UNKNOWN - WHAT IS CONFIG?
 				case R.id.config_btn_f1:
-//					bt_connection.disconnect();
 					break;
 				case R.id.config_btn_f2:
-					bt_checkpaired();
 					break;
 				case R.id.config_btn_reconfig:
 					break;
@@ -854,7 +874,7 @@ public class MainActivity extends AppCompatActivity {
 	protected void msg_instruction(boolean towrite, Enum.Instruction instruction) {
 		if (instruction != null) {
 			if (bt_device != null && towrite) {
-				bt_connection.write(instruction.getArduino().getBytes());
+				msg_writemsg(this, instruction.getArduino());
 			}
 			switch (instruction) {
 				case FORWARD:
@@ -898,61 +918,16 @@ public class MainActivity extends AppCompatActivity {
 					findViewById(R.id.time_btn_stopwatch).callOnClick();
 					break;
 				case SEND_ARENA_INFO:
-					String text = R_string(R.string._null);
+					String text = r_string(R.string._null);
 					for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-						if (!text.equalsIgnoreCase(R_string(R.string._null)) && (i % MAZE_C) == 0) {
+						if (!text.equalsIgnoreCase(r_string(R.string._null)) && (i % MAZE_C) == 0) {
 							text += "\n";
 						}
 						text += (((TextView) grid_maze.getChildAt(i)).getText() + " ");
 					}
-					bt_connection.write(text.getBytes());
+					msg_writemsg(this, text);
 					break;
 			}
 		}
 	}
-
-	@SuppressLint("HandlerLeak")
-	private final Handler msg_handler = new Handler() {
-		@Override
-		public void handleMessage(android.os.Message msg) {
-			String text;
-			switch (enum_handling(msg.what)) {
-				case STATE_CHANGE:
-					TextView tv = findViewById(R.id.txt_status);
-					tv.setText("State"+msg.arg1);
-					switch (enum_state(msg.arg1)) {
-						case NONE:
-							break;
-						case LISTEN:
-							break;
-						case CONNECTING:
-							break;
-						case CONNECTED:
-							msg_chatlist.clear();
-							break;
-					}
-					break;
-				case WRITE_MSG:
-					text = new String((byte[]) msg.obj);
-					msg_chatlist.add(new Message(false, text, getResources()));
-					msg_listview(getApplicationContext());
-					break;
-				case READ_MSG:
-					text = new String((byte[]) msg.obj, 0, msg.arg1);
-					msg_chatlist.add(new Message(true, text, getResources()));
-					msg_listview(getApplicationContext());
-
-					msg_instruction(false, enum_getinstruction(text));
-					break;
-				case BT_NAME:
-					text = msg.getData().getString(Enum.Handling.BT_NAME.getDesc());
-					new_message(getApplicationContext(), text);
-					bt_device = bt_adapter.getRemoteDevice(text);
-					break;
-				case TOAST:
-					new_message(getApplicationContext(), msg.getData().getString(Enum.Handling.TOAST.getDesc()));
-					break;
-			}
-		}
-	};
 }
