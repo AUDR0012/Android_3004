@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -15,13 +16,14 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.SwitchCompat;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -47,7 +49,6 @@ import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity {
 
-	private final UUID THIS_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 	final int MAZE_C = 15;
 	final int MAZE_R = 20;
 	final int ROBOT_SIZE = 3;
@@ -67,8 +68,9 @@ public class MainActivity extends AppCompatActivity {
 	ArrayList<BluetoothDevice> bt_newlist = new ArrayList<>(), bt_pairedlist = new ArrayList<>();
 	ListView bt_lv_device;
 	DeviceListAdapter bt_listadapter;
-	BluetoothConnectionService bt_connection;
+	BluetoothConnectionService bt_connection = null;
 	BluetoothDevice bt_device;
+	String bt_prev_addr;
 	boolean bt_display_isfind;
 
 	ListView msg_lv_chat, msg_lv_preview;
@@ -199,8 +201,6 @@ public class MainActivity extends AppCompatActivity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		String title = item.getTitle().toString();
-		((TextView) findViewById(R.id.txt_status)).setText(title + " selected");
 		switch (item.getItemId()) {
 			//RESTART
 			case R.id.menu_restart:
@@ -227,10 +227,27 @@ public class MainActivity extends AppCompatActivity {
 				});
 				bt_dialog.show();
 				return true;
+			case R.id.menu_bt_reconnect:
+				if (!r_string(R.string._null).equalsIgnoreCase(bt_prev_addr))
+					bt_device = bt_adapter.getRemoteDevice(bt_prev_addr);
+				bt_checkpaired();
+				return true;
 
 			default:
 				return super.onOptionsItemSelected(item);
 		}
+	}
+
+	protected String r_string(int id) {
+		return getResources().getString(id);
+	}
+
+	protected String view_string(View v) {
+		if (v instanceof TextView)
+			return ((TextView) v).getText().toString();
+		else if (v instanceof Button)
+			return ((Button) v).getText().toString();
+		return null;
 	}
 
 	protected void new_message(Context context, String message) {
@@ -285,14 +302,16 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	protected void reset_app() {
+		if (bt_connection == null)
+			bt_connection = new BluetoothConnectionService(this);
+		bt_update(-1);
+		bt_checkpaired();
+
 		reset_cells();
 
 		way_point = -1;
 		robot_location = cell_id(START_COL, START_ROW);
 		robot_go();
-
-		bt_update(-1);
-		bt_checkpaired();
 
 		tilt_option();
 
@@ -300,8 +319,8 @@ public class MainActivity extends AppCompatActivity {
 		((TextView) findViewById(R.id.time_txt_fastest)).setText(R.string.time_default);
 		time_option();
 
-		((EditText) findViewById(R.id.point_txt_x)).setText("");
-		((EditText) findViewById(R.id.point_txt_y)).setText("");
+		((EditText) findViewById(R.id.point_txt_x)).setText(r_string(R.string._null));
+		((EditText) findViewById(R.id.point_txt_y)).setText(r_string(R.string._null));
 
 		display_option();
 	}
@@ -311,7 +330,7 @@ public class MainActivity extends AppCompatActivity {
 
 		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 			TextView tv = (TextView) grid_maze.getChildAt(i);
-			if (Integer.valueOf(tv.getText().toString()) == Enum.Cell.PASSED.get()) {
+			if (Integer.valueOf(view_string(tv)) == Enum.Cell.PASSED.get()) {
 				tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
 				tv.setBackground(box);
 			}
@@ -320,14 +339,14 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void reg_bt_intentfilter() {
 		IntentFilter filter = new IntentFilter();
-//		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
+		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_STARTED);
 		filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED);
 		filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
 		filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
 		filter.addAction(BluetoothDevice.ACTION_FOUND);
-//		filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
+		filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST);
 		registerReceiver(bt_receiver, filter);
 	}
 
@@ -441,8 +460,8 @@ public class MainActivity extends AppCompatActivity {
 					bt_newlist.get(position).createBond();
 				} else {
 					bt_device = bt_pairedlist.get(position);
+					bt_checkpaired();
 				}
-				bt_checkpaired();
 			}
 		});
 		v.findViewById(R.id.bt_btn_find).setOnClickListener(new View.OnClickListener() {
@@ -481,18 +500,22 @@ public class MainActivity extends AppCompatActivity {
 		for (BluetoothDevice bd : set) {
 			bt_pairedlist.add(bd);
 		}
+
+		if (bt_pairedlist.size() == 0) {
+			new_message(this, "There are no paired devices");
+		}
 	}
 
 	protected void bt_checkpaired() {
 		if (bt_device == null) {
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_no);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.INVISIBLE);
-			((TextView) findViewById(R.id.bt_txt_connected)).setText("");
+			((TextView) findViewById(R.id.bt_txt_connected)).setText(r_string(R.string._null));
 
 			findViewById(R.id.msg_lv_preview).setVisibility(View.INVISIBLE);
 			findViewById(R.id.msg_temp).setVisibility(View.INVISIBLE);
 		} else {
-			bt_startconnection();
+			bt_connection.start_client(bt_device);
 
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_yes);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
@@ -532,28 +555,28 @@ public class MainActivity extends AppCompatActivity {
 		startActivity(indent_ACTION_REQUEST_DISCOVERABLE);
 	}
 
-	protected void bt_startconnection() {
-		bt_connection = new BluetoothConnectionService(this);
-		bt_connection.start_client(bt_device, THIS_UUID);
-	}
-
 	private final BroadcastReceiver bt_receiver = new BroadcastReceiver() {
 		public void onReceive(Context context, Intent intent) {
 			String action = intent.getAction();
 
 			if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
 
-				bt_device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				bt_checkpaired();
+				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+				if (bt_device != device) {
+					bt_device = device;
+					bt_checkpaired();
+				}
 
 			} else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
 
+				bt_prev_addr = bt_device.getAddress();
 				bt_device = null;
 				bt_checkpaired();
 				msg_chatlist.clear();
 
 			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
 
+				bt_prev_addr = bt_device.getAddress();
 				bt_device = null;
 				bt_checkpaired();
 				msg_chatlist.clear();
@@ -597,13 +620,13 @@ public class MainActivity extends AppCompatActivity {
 		v.findViewById(R.id.data_btn_send).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				msg_writemsg(v.getContext(), tv.getText().toString());
+				msg_writemsg(v.getContext(), view_string(tv));
 			}
 		});
 		v.findViewById(R.id.data_btn_clear).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				tv.setText("");
+				tv.setText(r_string(R.string._null));
 			}
 		});
 		return new AlertDialog.Builder(this).setView(v);
@@ -668,29 +691,16 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void tilt_move(float x, float y) { //TODO:SENDING/MOVING ISSUE
 		if (x > 0.5f) { //MOVE LEFT
-			tilt_turn(Enum.Direction.LEFT.get());
+			robot_move(Enum.Direction.LEFT);
 		}
 		if (x < -0.5f) { //MOVE RIGHT
-			tilt_turn(Enum.Direction.RIGHT.get());
+			robot_move(Enum.Direction.RIGHT);
 		}
 		if (y > 0.5f) { //MOVE DOWN
-			tilt_turn(Enum.Direction.UP.get());
+			robot_move(Enum.Direction.DOWN);
 		}
 		if (y < -0.5f) { //MOVE UP
-			tilt_turn(Enum.Direction.DOWN.get());
-		}
-
-		if (x > 0.5f || x < -0.5f || y > 0.5f || y < -0.5f) {
-			msg_instruction(true, Enum.Instruction.FORWARD);
-		}
-	}
-
-	protected void tilt_turn(int direction) {
-		int rotation = (((int) robot.getRotation()) % 360) / 90;
-
-		while (rotation == direction) {
-			rotation = (((int) robot.getRotation()) % 360) / 90;
-			msg_instruction(true, Enum.Instruction.ROTATE_RIGHT);
+			robot_move(Enum.Direction.UP);
 		}
 	}
 
@@ -703,12 +713,12 @@ public class MainActivity extends AppCompatActivity {
 			s.setText(R.string.time_explore);
 			time_textview = findViewById(R.id.time_txt_explore);
 		}
-		findViewById(R.id.time_btn_stopwatch).setEnabled(time_textview.getText().toString().equalsIgnoreCase(getResources().getString(R.string.time_default)));
+		findViewById(R.id.time_btn_stopwatch).setEnabled(view_string(time_textview).equalsIgnoreCase(r_string(R.string.time_default)));
 	}
 
 	protected void time_stopwatch(View v) {
 		Button b = (Button) v;
-		if (b.getText().toString().equalsIgnoreCase(getResources().getString(R.string.time_start))) {
+		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_start))) {
 			time_start = SystemClock.uptimeMillis();
 			time_handler.postDelayed(time_stopwatch, 0);
 
@@ -747,9 +757,9 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void point_set(boolean origin) {
 		//COMMON VALIDITY CHECK (1)
-		String point_x = ((TextView) findViewById(R.id.point_txt_x)).getText().toString(),
-			point_y = ((TextView) findViewById(R.id.point_txt_y)).getText().toString();
-		if (point_x.equalsIgnoreCase("") || point_y.equalsIgnoreCase("")) {
+		String point_x = view_string(findViewById(R.id.point_txt_x)),
+			point_y = view_string(findViewById(R.id.point_txt_y));
+		if (point_x.equalsIgnoreCase(r_string(R.string._null)) || point_y.equalsIgnoreCase(r_string(R.string._null))) {
 			new_message(this, "Please fill in the text fields.");
 			return;
 		}
@@ -779,7 +789,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 
 			if (way_point > -1) {
-				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(((TextView) grid_maze.getChildAt(way_point)).getText().toString())));
+				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(view_string(grid_maze.getChildAt(way_point)))));
 				grid_maze.getChildAt(way_point).setBackground(box);
 			}
 			box = new_drawable(R.drawable.d_box, Enum.Cell.WAYPOINT.getColor());
@@ -908,9 +918,9 @@ public class MainActivity extends AppCompatActivity {
 					findViewById(R.id.time_btn_stopwatch).callOnClick();
 					break;
 				case SEND_ARENA_INFO:
-					String text = "";
+					String text = r_string(R.string._null);
 					for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-						if (!text.equalsIgnoreCase("") && (i % MAZE_C) == 0) {
+						if (!text.equalsIgnoreCase(r_string(R.string._null)) && (i % MAZE_C) == 0) {
 							text += "\n";
 						}
 						text += (((TextView) grid_maze.getChildAt(i)).getText() + " ");

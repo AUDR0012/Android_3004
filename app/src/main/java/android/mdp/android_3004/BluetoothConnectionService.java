@@ -11,6 +11,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.UUID;
 
 public class BluetoothConnectionService {
@@ -22,7 +23,6 @@ public class BluetoothConnectionService {
 
 	private ConnectThread btt_connect;
 	private BluetoothDevice bt_device;
-	private UUID bt_device_UUID;
 
 	private ConnectedThread btt_connected;
 
@@ -71,57 +71,57 @@ public class BluetoothConnectionService {
 	private class ConnectThread extends Thread {
 		BluetoothSocket socket = null;
 
-		ConnectThread(BluetoothDevice bd, UUID uuid) {
+		ConnectThread(BluetoothDevice bd) {
 			bt_device = bd;
-			bt_device_UUID = uuid;
 		}
 
 		public void run() {
+			bt_adapter.cancelDiscovery();
+
 			BluetoothSocket tmp = null;
 			try {
-				tmp = bt_device.createRfcommSocketToServiceRecord(bt_device_UUID);
+				tmp = bt_device.createRfcommSocketToServiceRecord(THIS_UUID);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 			socket = tmp;
 
-			bt_adapter.cancelDiscovery();
 			try {
 				socket.connect();
+				connected(socket, bt_device);
 			} catch (IOException e) {
-				try {
-					socket.close();
-				} catch (IOException e1) {
-					e1.printStackTrace();
-				}
+				socket = reconnect(tmp);
 				e.printStackTrace();
 			}
-			connected(socket, bt_device);
+		}
+
+		BluetoothSocket reconnect(BluetoothSocket tmp) {
+			Class<?> class2 = tmp.getRemoteDevice().getClass();
+			Class<?>[] paramTypes = new Class<?>[]{Integer.TYPE};
+
+			Method m = null;
+			try {
+				m = class2.getMethod("createRfcommSocket", paramTypes);
+				Object[] params = new Object[]{Integer.valueOf(1)};
+
+				BluetoothSocket fbs = (BluetoothSocket) m.invoke(tmp.getRemoteDevice(), params);
+				fbs.connect();
+				connected(fbs, bt_device);
+				return fbs;
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+			return null;
 		}
 
 		void cancel() {
 			try {
 				socket.close();
+//				bt_device = null;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-	}
-
-	public synchronized void start() {
-		if (btt_connect != null) {
-			btt_connect.cancel();
-			btt_connect = null;
-		}
-		if (btt_accept == null) {
-			btt_accept = new AcceptThread();
-			btt_accept.start();
-		}
-	}
-
-	public void start_client(BluetoothDevice device, UUID device_UUID) {
-		btt_connect = new ConnectThread(device, device_UUID);
-		btt_connect.start();
 	}
 
 	public class ConnectedThread extends Thread {
@@ -185,9 +185,33 @@ public class BluetoothConnectionService {
 		public void cancel() {
 			try {
 				socket.close();
+				stream_in.close();
+				stream_out.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		}
+	}
+
+	public synchronized void start() {
+//		if (btt_connected != null) {
+//			btt_connected.cancel();
+//			btt_connected = null;
+//		}
+		if (btt_connect != null) {
+			btt_connect.cancel();
+			btt_connect = null;
+		}
+		if (btt_accept == null) {
+			btt_accept = new AcceptThread();
+			btt_accept.start();
+		}
+	}
+
+	public void start_client(BluetoothDevice device) {
+		if (device != bt_device) {
+			btt_connect = new ConnectThread(device);
+			btt_connect.start();
 		}
 	}
 
