@@ -11,13 +11,13 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 
-public class ChatListAdapter extends ArrayAdapter<Message> {
+public class ChatListAdapter extends ArrayAdapter<MessageText> {
 
 	private LayoutInflater inflater;
-	private ArrayList<Message> message_list;
+	private ArrayList<MessageText> message_list;
 	private int resource_id;
 
-	protected ChatListAdapter(Context c, int r_id, ArrayList<Message> m_list) {
+	protected ChatListAdapter(Context c, int r_id, ArrayList<MessageText> m_list) {
 		super(c, r_id, m_list);
 		message_list = m_list;
 		inflater = (LayoutInflater) c.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
@@ -27,16 +27,15 @@ public class ChatListAdapter extends ArrayAdapter<Message> {
 	public View getView(int position, View convertView, ViewGroup parent) {
 		convertView = inflater.inflate(resource_id, null);
 
-		Message message = message_list.get(position);
+		MessageText message = message_list.get(position);
 		if (message != null) {
 			TextView details = convertView.findViewById(R.id.msg_txt_details);
-			details.setText(message.getDetails());
+			details.setText(message.getText());
 
-			Enum.Instruction instruction = getInstruction(message.getDetails());
-			if (instruction != null) {
+			if (!message.getDescription().equalsIgnoreCase("")) {
 				TextView description = convertView.findViewById(R.id.msg_txt_description);
 				description.setVisibility(View.VISIBLE);
-				description.setText("::" + instruction.getDescription());
+				description.setText("::" + message.getDescription());
 			}
 
 			Drawable speech = convertView.getResources().getDrawable(R.drawable.d_speech, null);
@@ -44,14 +43,5 @@ public class ChatListAdapter extends ArrayAdapter<Message> {
 			convertView.setBackground(speech);
 		}
 		return convertView;
-	}
-
-	public Enum.Instruction getInstruction(String text) {
-		for (Enum.Instruction i : Enum.Instruction.values()) {
-			if (i.getArduino().equalsIgnoreCase(text)) {
-				return i;
-			}
-		}
-		return null;
 	}
 }

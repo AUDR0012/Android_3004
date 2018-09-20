@@ -10,16 +10,16 @@
     <item
         android:id="@+id/menu_bt"
         android:icon="@drawable/d_bt_off"
-        android:title="@string/menu_bt"
+        android:title="@string/bt_header"
         app:showAsAction="ifRoom">
 
         <menu>
             <item
                 android:id="@+id/menu_bt_on"
-                android:title="@string/bt_on" />
+                android:title="@string/_on" />
             <item
                 android:id="@+id/menu_bt_off"
-                android:title="@string/bt_off" />
+                android:title="@string/_off" />
             <item
                 android:id="@+id/menu_bt_discover"
                 android:title="@string/bt_discover" />

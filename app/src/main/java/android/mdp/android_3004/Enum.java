@@ -55,8 +55,9 @@ public class Enum {
 		BEGIN_FASTEST_PATH("Begin Fastest Path", "beginFastest"),
 		SEND_ARENA_INFO("Send Arena Info", "sendArena"),
 
-		WAY("Way point", "way{x,y}"),
-		ARROW("Obstacle with Up Arrow", "arrow{x,y,direction}");
+		ORIGIN("Origin point", "origin"),//origin{x,y}
+		WAY("Way point", "way"),//way{x,y}
+		ARROW("Obstacle with Up Arrow", "arrow");//arrow{x,y,direction}
 
 		Instruction(String description, String arduino) {
 			this.description = description;

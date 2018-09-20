@@ -194,10 +194,6 @@ public class BluetoothConnectionService {
 	}
 
 	public synchronized void start() {
-//		if (btt_connected != null) {
-//			btt_connected.cancel();
-//			btt_connected = null;
-//		}
 		if (btt_connect != null) {
 			btt_connect.cancel();
 			btt_connect = null;

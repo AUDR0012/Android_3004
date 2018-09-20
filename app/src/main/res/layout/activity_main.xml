@@ -69,7 +69,7 @@
 
         </LinearLayout>
 
-        <!--TODO:REMOVABLE LY_TILT::VISIBILITY-->
+        <!--TODO:TILT_VISIBILITY-->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -161,8 +161,6 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
             android:orientation="vertical">
 
             <TextView
@@ -172,57 +170,143 @@
                 android:text="@string/point_header" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:orientation="horizontal">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:gravity="bottom"
-                    android:text="@string/point_x_qn" />
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:text="@string/point_origin_qn"
+                    android:textColor="@color/dim_gray"
+                    android:textStyle="bold" />
 
-                <EditText
-                    android:id="@+id/point_txt_x"
-                    style="@style/EditTextStyle_Coords"
-                    android:layout_width="50dp"
-                    android:layout_height="40dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingEnd="15dp"
+                    android:paddingStart="15dp">
+
+                    <TextView
+                        android:id="@+id/point_txt_origin_x"
+                        android:layout_width="0dp"
+                        android:layout_height="25dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/point_txt_origin_y"
+                        android:layout_width="0dp"
+                        android:layout_height="25dp"
+                        android:layout_weight="1" />
+
+                </LinearLayout>
 
                 <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="30dp"
-                    android:gravity="bottom"
-                    android:paddingEnd="0dp"
-                    android:paddingStart="15dp"
-                    android:text="@string/point_y_qn" />
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp"
+                    android:text="@string/point_way_qn"
+                    android:textColor="@color/dim_gray"
+                    android:textStyle="bold" />
 
-                <EditText
-                    android:id="@+id/point_txt_y"
-                    style="@style/EditTextStyle_Coords"
-                    android:layout_width="50dp"
-                    android:layout_height="40dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingEnd="15dp"
+                    android:paddingStart="15dp">
+
+                    <TextView
+                        android:id="@+id/point_txt_way_x"
+                        android:layout_width="0dp"
+                        android:layout_height="20dp"
+                        android:layout_weight="1" />
+
+                    <TextView
+                        android:id="@+id/point_txt_way_y"
+                        android:layout_width="0dp"
+                        android:layout_height="20dp"
+                        android:layout_weight="1" />
+
+                </LinearLayout>
+
+                <android.support.v7.widget.SwitchCompat
+                    android:id="@+id/point_swt_isway"
+                    android:layout_width="match_parent"
+                    android:layout_height="30dp"
+                    android:textColor="@color/dim_gray"
+                    android:theme="@style/SwitchStyle" />
+
+                <Button
+                    android:id="@+id/point_btn_set"
+                    style="@style/ButtonStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:text="@string/point_isset_false" />
+
             </LinearLayout>
 
+            <!--TODO:POINTS_MANUAL KEY-IN-->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
+                android:orientation="vertical"
+                android:visibility="gone">
 
-                <Button
-                    android:id="@+id/point_btn_origin"
-                    style="@style/ButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:text="@string/point_origin" />
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    android:orientation="horizontal">
 
-                <Button
-                    android:id="@+id/point_btn_way"
-                    style="@style/ButtonStyle"
-                    android:layout_width="0dp"
-                    android:layout_height="40dp"
-                    android:layout_weight="1"
-                    android:text="@string/point_way" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:gravity="bottom"
+                        android:text="@string/point_x_qn" />
+
+                    <EditText
+                        android:id="@+id/point_txt_x"
+                        style="@style/EditTextStyle_Coords"
+                        android:layout_width="50dp"
+                        android:layout_height="40dp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="30dp"
+                        android:gravity="bottom"
+                        android:paddingEnd="0dp"
+                        android:paddingStart="15dp"
+                        android:text="@string/point_y_qn" />
+
+                    <EditText
+                        android:id="@+id/point_txt_y"
+                        style="@style/EditTextStyle_Coords"
+                        android:layout_width="50dp"
+                        android:layout_height="40dp" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <Button
+                        android:id="@+id/point_btn_origin"
+                        style="@style/ButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="@string/point_origin" />
+
+                    <Button
+                        android:id="@+id/point_btn_way"
+                        style="@style/ButtonStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:text="@string/point_way" />
+                </LinearLayout>
 
             </LinearLayout>
 
@@ -252,6 +336,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:text="@string/display_update" />
+
         </LinearLayout>
 
         <LinearLayout
@@ -266,9 +351,9 @@
                 android:text="@string/config_header" />
 
             <LinearLayout
-                android:orientation="horizontal"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content" >
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
 
                 <Button
                     android:id="@+id/config_btn_f1"
@@ -285,7 +370,6 @@
                     android:layout_height="40dp"
                     android:layout_weight="1"
                     android:text="@string/config_f2" />
-
             </LinearLayout>
 
             <Button
@@ -294,6 +378,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="40dp"
                 android:text="@string/config_reconfig" />
+
         </LinearLayout>
 
     </LinearLayout>
@@ -307,7 +392,7 @@
         android:paddingBottom="5dp"
         android:paddingEnd="0dp"
         android:paddingStart="5dp"
-        android:paddingTop="5dp">
+        android:paddingTop="7dp">
 
         <GridLayout
             android:id="@+id/grid_direction"

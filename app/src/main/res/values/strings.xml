@@ -1,17 +1,26 @@
 <resources>
     <string name="app_name">MDP Group 17</string>
     <string name="_null" />
+    <string name="_success">Success</string>
+    <string name="_on">Turn On</string>
+    <string name="_off">Turn Off</string>
+
+    <string name="menu_restart">Restart</string>
 
     <string name="bt_header">Bluetooth</string>
-    <string name="msg_header">Messaging</string>
-    <string name="tilt_header">Accelerometer</string>
-    <string name="time_header">Timings</string>
-    <string name="display_header">Display</string>
-    <string name="point_header">Set Points</string>
-    <string name="config_header">Configurations</string>
+    <string name="bt_discover">Toggle Discovery</string>
+    <string name="bt_find">Find Devices</string>
+    <string name="bt_connect_yes">Connected to:</string>
+    <string name="bt_connect_no">Not Connected</string>
+    <string name="bt_paired">Paired Devices</string>
+    <string name="bt_reconnect">Reconnect to Last Device</string>
 
-    <string name="tilt_on">On</string>
-    <string name="tilt_off">Off</string>
+    <string name="msg_header">Messaging</string>
+    <string name="msg_send">Send</string>
+
+    <string name="tilt_header">Accelerometer</string>
+
+    <string name="time_header">Timings</string>
     <string name="time_explore_qn">Exploration Time:</string>
     <string name="time_fastest_qn">Fastest Path Time:</string>
     <string name="time_fastest">Fastest</string>
@@ -20,28 +29,26 @@
     <string name="time_stop">Stop</string>
     <string name="time_reset">Reset</string>
     <string name="time_default">0:00:000</string>
+
+    <string name="point_header">Coordinates</string>
     <string name="point_x_qn">X:</string>
     <string name="point_y_qn">Y:</string>
     <string name="point_origin">Origin</string>
     <string name="point_way">Way</string>
+    <string name="point_origin_qn">Origin point:</string>
+    <string name="point_way_qn">Way point:</string>
+    <string name="point_isset_false">Set Point</string>
+    <string name="point_isset_true">Confirm</string>
+
+    <string name="display_header">Display</string>
     <string name="display_manual">Manual</string>
     <string name="display_auto">Auto</string>
     <string name="display_update">Update</string>
+
+    <string name="config_header">Configurations</string>
+    <string name="config_reconfig">Reconfigure</string>
     <string name="config_f1">F1</string>
     <string name="config_f2">F2</string>
-    <string name="config_reconfig">Reconfigure</string>
-
-    <string name="menu_restart">Restart</string>
-    <string name="menu_bt">Bluetooth</string>
-    <string name="bt_on">Turn On</string>
-    <string name="bt_off">Turn Off</string>
-    <string name="bt_discover">Toggle Discovery</string>
-    <string name="bt_find">Find Devices</string>
-    <string name="bt_connect_yes">Connected to:</string>
-    <string name="bt_connect_no">Not Connected</string>
-    <string name="bt_paired">Paired Devices</string>
-    <string name="bt_reconnect">Reconnect to Last Device</string>
-    <string name="msg_send">Send</string>
     <string name="config_f1_qn">F1:</string>
     <string name="config_f2_qn">F2:</string>
     <string name="config_f1_default">F1_DEFAULT</string>
@@ -51,4 +58,7 @@
     <string name="status_default">No Status</string>
     <string name="status_moving">Robot moving</string>
     <string name="status_stop">Robot stopped</string>
+
+    <string name="error_robot_move_crash">Robot will collide with obstacle</string>
+    <string name="error_robot_move_no">Robot cannot move to that point</string>
 </resources>
