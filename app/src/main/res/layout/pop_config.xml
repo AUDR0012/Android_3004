@@ -1,85 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/ly_msg"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="5dp"
-    android:paddingEnd="14dp"
-    android:paddingStart="14dp">
+	android:id="@+id/ly_msg"
+	android:layout_width="match_parent"
+	android:layout_height="wrap_content"
+	android:orientation="vertical"
+	android:padding="5dp"
+	android:paddingEnd="14dp"
+	android:paddingStart="14dp">
 
-    <TextView
-        android:id="@+id/config_lbl_header"
-        style="@style/HeaderStyle"
-        android:layout_width="match_parent"
-        android:layout_height="30dp"
-        android:text="@string/config_header" />
+	<TextView
+		android:id="@+id/config_lbl_header"
+		style="@style/HeaderStyle"
+		android:layout_width="match_parent"
+		android:layout_height="30dp"
+		android:text="@string/config_header" />
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:orientation="horizontal"
-        android:paddingBottom="10dp">
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:focusable="true"
+		android:focusableInTouchMode="true"
+		android:orientation="horizontal"
+		android:paddingBottom="10dp">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:text="@string/config_f1_qn" />
+		<TextView
+			android:layout_width="0dp"
+			android:layout_height="40dp"
+			android:layout_weight="1"
+			android:text="@string/config_f1_qn" />
 
-        <EditText
-            android:id="@+id/f1_txt_config"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="9"
-            android:textSize="16sp" />
+		<EditText
+			android:id="@+id/f1_txt_config"
+			android:layout_width="0dp"
+			android:layout_height="40dp"
+			android:layout_weight="9"
+			android:textSize="16sp" />
 
-        <ImageButton
-            android:id="@+id/f1_btn_clear"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_gravity="center"
-            android:background="@drawable/d_clear"
-            android:visibility="gone" />
-    </LinearLayout>
+		<ImageButton
+			android:id="@+id/f1_btn_clear"
+			android:layout_width="20dp"
+			android:layout_height="20dp"
+			android:layout_gravity="center"
+			android:background="@drawable/d_clear"
+			android:visibility="gone" />
+	</LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:focusable="true"
-        android:focusableInTouchMode="true"
-        android:orientation="horizontal"
-        android:paddingBottom="10dp">
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:focusable="true"
+		android:focusableInTouchMode="true"
+		android:orientation="horizontal"
+		android:paddingBottom="10dp">
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="1"
-            android:text="@string/config_f2_qn" />
+		<TextView
+			android:layout_width="0dp"
+			android:layout_height="40dp"
+			android:layout_weight="1"
+			android:text="@string/config_f2_qn" />
 
-        <EditText
-            android:id="@+id/f2_txt_config"
-            android:layout_width="0dp"
-            android:layout_height="40dp"
-            android:layout_weight="9"
-            android:textSize="16sp" />
+		<EditText
+			android:id="@+id/f2_txt_config"
+			android:layout_width="0dp"
+			android:layout_height="40dp"
+			android:layout_weight="9"
+			android:textSize="16sp" />
 
-        <ImageButton
-            android:id="@+id/f2_btn_clear"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:layout_gravity="center"
-            android:background="@drawable/d_clear"
-            android:visibility="gone" />
-    </LinearLayout>
+		<ImageButton
+			android:id="@+id/f2_btn_clear"
+			android:layout_width="20dp"
+			android:layout_height="20dp"
+			android:layout_gravity="center"
+			android:background="@drawable/d_clear"
+			android:visibility="gone" />
+	</LinearLayout>
 
-    <Button
-        android:id="@+id/config_btn_save"
-        style="@style/ButtonStyle"
-        android:layout_width="70dp"
-        android:layout_height="40dp"
-        android:text="@string/config_save" />
+	<Button
+		android:id="@+id/config_btn_save"
+		style="@style/ButtonStyle"
+		android:layout_width="70dp"
+		android:layout_height="40dp"
+		android:text="@string/config_save" />
 
 </LinearLayout>

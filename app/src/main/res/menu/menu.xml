@@ -1,34 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
-    <item
-        android:id="@+id/menu_restart"
-        android:icon="@drawable/d_restart"
-        android:title="@string/menu_restart"
-        app:showAsAction="ifRoom" />
+	xmlns:app="http://schemas.android.com/apk/res-auto">
+	<item
+		android:id="@+id/menu_restart"
+		android:icon="@drawable/d_restart"
+		android:title="@string/menu_restart"
+		app:showAsAction="ifRoom" />
 
-    <item
-        android:id="@+id/menu_bt"
-        android:icon="@drawable/d_bt_off"
-        android:title="@string/bt_header"
-        app:showAsAction="ifRoom">
+	<item
+		android:id="@+id/menu_bt"
+		android:icon="@drawable/d_bt_off"
+		android:title="@string/bt_header"
+		app:showAsAction="ifRoom">
 
-        <menu>
-            <item
-                android:id="@+id/menu_bt_on"
-                android:title="@string/_on" />
-            <item
-                android:id="@+id/menu_bt_off"
-                android:title="@string/_off" />
-            <item
-                android:id="@+id/menu_bt_discover"
-                android:title="@string/bt_discover" />
-            <item
-                android:id="@+id/menu_bt_find"
-                android:title="@string/bt_find" />
-            <item
-                android:id="@+id/menu_bt_reconnect"
-                android:title="@string/bt_reconnect" />
-        </menu>
-    </item>
+		<menu>
+			<item
+				android:id="@+id/menu_bt_on"
+				android:title="@string/_on" />
+			<item
+				android:id="@+id/menu_bt_off"
+				android:title="@string/_off" />
+			<item
+				android:id="@+id/menu_bt_discover"
+				android:title="@string/bt_discover" />
+			<item
+				android:id="@+id/menu_bt_find"
+				android:title="@string/bt_find" />
+			<item
+				android:id="@+id/menu_bt_reconnect"
+				android:title="@string/bt_reconnect" />
+		</menu>
+	</item>
 </menu>

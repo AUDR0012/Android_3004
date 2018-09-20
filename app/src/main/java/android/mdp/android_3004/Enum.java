@@ -55,6 +55,8 @@ public class Enum {
 		BEGIN_FASTEST_PATH("Begin Fastest Path", "beginFastest"),
 		SEND_ARENA_INFO("Send Arena Info", "sendArena"),
 
+		RESET("Reset", "reset"),
+
 		ORIGIN("Origin point", "origin"),//origin{x,y}
 		WAY("Way point", "way"),//way{x,y}
 		ARROW("Obstacle with Up Arrow", "arrow");//arrow{x,y,direction}
