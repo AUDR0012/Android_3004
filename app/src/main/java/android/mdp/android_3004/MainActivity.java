@@ -327,8 +327,6 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	protected void reset_app() {
-		if (bt_connection == null)
-			bt_connection = new BluetoothConnectionService(this);
 		bt_prev_addr = r_string(R.string._null);
 		bt_update(-1);
 		bt_checkpaired();
@@ -563,6 +561,7 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.msg_lv_preview).setVisibility(View.INVISIBLE);
 			findViewById(R.id.msg_temp).setVisibility(View.INVISIBLE);
 		} else {
+			if (bt_connection == null) bt_connection = new BluetoothConnectionService(this);
 			bt_connection.start_client(bt_device);
 			if (dialog_bt.isShowing()) {
 				dialog_bt.dismiss();
