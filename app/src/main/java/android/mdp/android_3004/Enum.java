@@ -63,6 +63,7 @@ public class Enum {
 
 		ORIGIN("Origin point", "origin"),//origin{x,y}
 		WAY("Way point", "way"),//way{x,y}
+		OBSTACLE("Obstacle", "obstacle"),//obstacle{x,y}
 		ARROW("Obstacle with Up Arrow", "arrow");//arrow{x,y,direction}
 
 		Instruction(String description, String arduino) {
