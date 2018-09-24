@@ -28,19 +28,25 @@ public class Enum {
 	}
 
 	public enum Direction {
-		UP(0),
-		RIGHT(1),
-		DOWN(2),
-		LEFT(3);
+		UP(0, "U"),
+		RIGHT(1, "R"),
+		DOWN(2, "D"),
+		LEFT(3, "L");
 
-		Direction(int id) {
+		Direction(int id, String chara) {
 			this.id = id;
+			this.chara = chara;
 		}
 
 		private int id;
+		private String chara;
 
 		public int get() {
 			return id;
+		}
+
+		public String getChara() {
+			return chara;
 		}
 	}
 
@@ -54,8 +60,6 @@ public class Enum {
 		BEGIN_EXPLORATION("Begin Exploration", "beginExplore"),
 		BEGIN_FASTEST_PATH("Begin Fastest Path", "beginFastest"),
 		SEND_ARENA_INFO("Send Arena Info", "sendArena"),
-
-		RESET("Reset", "reset"),
 
 		ORIGIN("Origin point", "origin"),//origin{x,y}
 		WAY("Way point", "way"),//way{x,y}

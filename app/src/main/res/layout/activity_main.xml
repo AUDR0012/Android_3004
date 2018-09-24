@@ -189,10 +189,22 @@
 					android:paddingStart="15dp">
 
 					<TextView
+						android:layout_width="0dp"
+						android:layout_height="25dp"
+						android:layout_weight="0.75"
+						android:text="@string/point_x_qn" />
+
+					<TextView
 						android:id="@+id/point_txt_origin_x"
 						android:layout_width="0dp"
 						android:layout_height="25dp"
 						android:layout_weight="1" />
+
+					<TextView
+						android:layout_width="0dp"
+						android:layout_height="25dp"
+						android:layout_weight="0.75"
+						android:text="@string/point_y_qn" />
 
 					<TextView
 						android:id="@+id/point_txt_origin_y"
@@ -217,10 +229,22 @@
 					android:paddingStart="15dp">
 
 					<TextView
+						android:layout_width="0dp"
+						android:layout_height="20dp"
+						android:layout_weight="0.75"
+						android:text="@string/point_x_qn" />
+
+					<TextView
 						android:id="@+id/point_txt_way_x"
 						android:layout_width="0dp"
 						android:layout_height="20dp"
 						android:layout_weight="1" />
+
+					<TextView
+						android:layout_width="0dp"
+						android:layout_height="20dp"
+						android:layout_weight="0.75"
+						android:text="@string/point_y_qn" />
 
 					<TextView
 						android:id="@+id/point_txt_way_y"
