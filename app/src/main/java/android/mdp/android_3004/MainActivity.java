@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 	ImageView robot;
 	int point_robot, point_way;
 	boolean point_isset;
-	ArrayList<Integer> obstacle_list = new ArrayList<>();
+	ArrayList<Integer> point_obstaclelist = new ArrayList<>();
 
 	Menu menu;
 	LayoutInflater inflater;
@@ -88,6 +88,9 @@ public class MainActivity extends AppCompatActivity {
 	long time_start;
 	TextView time_tv;
 
+	boolean display_ismanual = false;
+	ArrayList<Enum.Instruction> display_manuallist = new ArrayList<>();
+
 	AlertDialog dialog_config;
 	SharedPreferences config_pref;
 
@@ -100,7 +103,6 @@ public class MainActivity extends AppCompatActivity {
 //		========== OTHERS ==========
 		inflater = LayoutInflater.from(this);
 
-		bt_getpaired();
 		reg_bt_intentfilter();
 		LocalBroadcastManager.getInstance(this).registerReceiver(bt_msg_receiver, new IntentFilter("messaging"));
 		msg_lv_preview = findViewById(R.id.msg_lv_preview);
@@ -148,7 +150,7 @@ public class MainActivity extends AppCompatActivity {
 			grid_maze.addView(tv);
 		}
 
-		obstacle_random(); //TODO:REMOVABLE
+//		obstacle_random(); //TODO:REMOVABLE
 
 //		========== ACCELEROMETER ==========
 		sensor_manager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -210,6 +212,9 @@ public class MainActivity extends AppCompatActivity {
 			//BLUETOOTH
 			case R.id.menu_bt:
 				bt_update(-1);
+				if (bt_adapter.isEnabled() && bt_connection == null) {
+					bt_connection = new BluetoothConnectionService(this);
+				}
 				return true;
 			case R.id.menu_bt_on:
 				bt_update(1);
@@ -326,7 +331,6 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	protected void reset_app() {
-		if (bt_connection == null) bt_connection = new BluetoothConnectionService(this);
 		bt_update(-1);
 		bt_checkpaired();
 
@@ -388,7 +392,7 @@ public class MainActivity extends AppCompatActivity {
 
 		for (int i = 0; i < count; i++) {
 			cell = (new Random()).nextInt(210) + 45;
-			if (obstacle_list.contains(cell)) {
+			if (point_obstaclelist.contains(cell)) {
 				i--;
 				continue;
 			}
@@ -397,14 +401,14 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	protected String obstacle_create(int cell) {
-		if (obstacle_list.contains(cell)) {
+		if (point_obstaclelist.contains(cell)) {
 			return new_message("Obstacle is already created at that cell");
 		} else {
 			Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.OBSTACLE.getColor());
 			TextView obstacle = grid_maze.findViewById(cell);
 			obstacle.setBackground(box);
 			obstacle.setText(String.valueOf(Enum.Cell.OBSTACLE.get()));
-			obstacle_list.add(cell);
+			point_obstaclelist.add(cell);
 			return r_string(R.string._success);
 		}
 	}
@@ -490,7 +494,7 @@ public class MainActivity extends AppCompatActivity {
 
 		for (int r = row; r < row + ROBOT_SIZE; r++) {
 			for (int c = col; c < col + ROBOT_SIZE; c++) {
-				if (obstacle_list.contains(cell_id(c, r)))
+				if (point_obstaclelist.contains(cell_id(c, r)))
 					return true;
 			}
 		}
@@ -637,7 +641,6 @@ public class MainActivity extends AppCompatActivity {
 
 			} else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
 
-				new_message("ACTION_ACL_CONNECTED");
 				bt_device = bt_connection.getDevice();
 				bt_prev = bt_device;
 				bt_canceldiscover();
@@ -645,7 +648,6 @@ public class MainActivity extends AppCompatActivity {
 
 			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
 
-				new_message("ACTION_ACL_DISCONNECTED");
 				if (bt_device != null) {
 					bt_device = null;
 					bt_checkpaired();
@@ -731,11 +733,12 @@ public class MainActivity extends AppCompatActivity {
 		byte[] bytes = text.getBytes(Charset.defaultCharset());
 		bt_connection.write(bytes);
 
+		String new_message = text;
 		if (Enum.Instruction.SEND_ARENA_INFO.getDescription().equalsIgnoreCase(description)) {
-			text.replace("|", "\n"); //TODO:VERIFY
+			new_message = text.replaceAll(r_string(R.string._delimiter), "\n"); //TODO:VERIFY
 		}
 
-		msg_chatlist.add(new MessageText(false, text, description, getResources()));
+		msg_chatlist.add(new MessageText(false, new_message, description, getResources()));
 		msg_listview();
 	}
 
@@ -772,21 +775,37 @@ public class MainActivity extends AppCompatActivity {
 			String text = intent.getStringExtra("read message"),
 				description = r_string(R.string._success);
 
-			if (!text.contains("{") && !text.contains(",") && !text.contains("}")) {
+			if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e))) {
 
 				Enum.Instruction instruction = enum_getinstruction(text);
-
 				msg_chatlist.add(new MessageText(true, text, ((instruction == null) ? r_string(R.string._null) : instruction.getDescription()), getResources()));
 				msg_listview();
 
-				msg_instruction(false, enum_getinstruction(text));
+				if (instruction != null) {
+					switch (instruction) {
+						case SEND_ARENA_INFO:
+							String send_arena = r_string(R.string._null);
+							for (int i = 0; i < MAZE_C * MAZE_R; i++) {
+								if (!send_arena.equalsIgnoreCase(r_string(R.string._null)) && (i % MAZE_C) == 0) {
+									send_arena += r_string(R.string._delimiter);
+								}
+								send_arena += (view_string(grid_maze.findViewById(i)) + " ");
+							}
+							msg_writemsg(send_arena, instruction.getDescription());
+							break;
+
+						default: //MOVEMENTS
+							msg_movements(false, true, instruction);
+							break;
+					}
+				}
 
 			} else {
 
-				int ch_sta = text.indexOf("{"),
-					ch_mid1 = text.indexOf(","),
-					ch_mid2 = text.indexOf(",", ch_mid1 + 1),
-					ch_end = text.indexOf("}");
+				int ch_sta = text.indexOf(r_string(R.string._bracket_s)),
+					ch_mid1 = text.indexOf(r_string(R.string._delimiter)),
+					ch_mid2 = text.indexOf(r_string(R.string._delimiter), ch_mid1 + 1),
+					ch_end = text.indexOf(r_string(R.string._bracket_e));
 
 				try {
 					Enum.Instruction instruction = enum_getinstruction(text.substring(0, ch_sta));
@@ -826,7 +845,7 @@ public class MainActivity extends AppCompatActivity {
 								if (direction == null) {
 									description = new_message("Invalid direction found");
 								} else {
-									if (obstacle_list.contains(cell)) {
+									if (point_obstaclelist.contains(cell)) {
 										obstacle_arrow(cell, direction.getChara());
 									} else {
 										description = new_message("No obstacle found at that cell");
@@ -991,7 +1010,7 @@ public class MainActivity extends AppCompatActivity {
 
 	protected String point_set2(boolean isway, int cell, boolean iswrite) {
 		if (isway) {
-			if (obstacle_list.contains(cell)) {
+			if (point_obstaclelist.contains(cell)) {
 				return new_message("Way point cannot be on an obstacle");
 			}
 			Drawable box;
@@ -1044,10 +1063,20 @@ public class MainActivity extends AppCompatActivity {
 		if (s.isChecked()) {
 			s.setText(R.string.display_manual);
 			b.setEnabled(true);
+			display_ismanual = true;
 		} else {
 			s.setText(R.string.display_auto);
 			b.setEnabled(false);
+			display_ismanual = false;
 		}
+	}
+
+	protected void display_toupdate() {
+		for (Enum.Instruction instruction : display_manuallist) {
+			//TODO:ASSUME ONLY MOVEMENTS
+			msg_movements(false, false, instruction);
+		}
+		display_manuallist.clear();
 	}
 
 	protected AlertDialog.Builder pop_config() {
@@ -1150,16 +1179,16 @@ public class MainActivity extends AppCompatActivity {
 
 				//MAZE
 				case R.id.direction_btn_up:
-					msg_instruction(true, Enum.Instruction.FORWARD);
+					msg_movements(true, true, Enum.Instruction.FORWARD);
 					break;
 				case R.id.direction_btn_down:
-					msg_instruction(true, Enum.Instruction.REVERSE);
+					msg_movements(true, true, Enum.Instruction.REVERSE);
 					break;
 				case R.id.direction_btn_left:
-					msg_instruction(true, Enum.Instruction.ROTATE_LEFT);
+					msg_movements(true, true, Enum.Instruction.ROTATE_LEFT);
 					break;
 				case R.id.direction_btn_right:
-					msg_instruction(true, Enum.Instruction.ROTATE_RIGHT);
+					msg_movements(true, true, Enum.Instruction.ROTATE_RIGHT);
 					break;
 
 				//STOPWATCH
@@ -1199,79 +1228,49 @@ public class MainActivity extends AppCompatActivity {
 					dialog_config = pop_config().show();
 					break;
 
-				//DISPLAY GRAPHICS //TODO:UNKNOWN - HOW TO MANUAL/AUTO?
+				//DISPLAY GRAPHICS
 				case R.id.display_swt_ismanual:
 					display_option();
 					break;
 				case R.id.display_btn_update:
+					display_toupdate();
 					break;
 			}
 		}
 	};
 
-	protected void msg_instruction(boolean towrite, Enum.Instruction instruction) {
+	protected void msg_movements(boolean towrite, boolean toadd, Enum.Instruction instruction) {
 		if (instruction != null) {
-			String send_arena = r_string(R.string._null);
 			boolean success = true;
-			switch (instruction) {
-				case FORWARD:
-					success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
-					break;
-				case REVERSE:
-					success = robot_move(enum_getdirection((((int) (robot.getRotation() + 180)) % 360) / 90));
-					break;
-				case ROTATE_LEFT:
-					robot_rotate(Enum.Direction.LEFT.get());
-					break;
-				case ROTATE_RIGHT:
-					robot_rotate(Enum.Direction.RIGHT.get());
-					break;
-				case STRAFE_LEFT:
-					robot_rotate(Enum.Direction.LEFT.get());
-					success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
-					break;
-				case STRAFE_RIGHT:
-					robot_rotate(Enum.Direction.RIGHT.get());
-					success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
-					break;
-				case BEGIN_EXPLORATION://TODO
-//					if (time_start != 0L) {
-//						if (findViewById(R.id.time_btn_stopwatch).isEnabled())
-//							findViewById(R.id.time_btn_stopwatch).callOnClick();
-//						findViewById(R.id.time_btn_reset).callOnClick();
-//					}
-//					((SwitchCompat) findViewById(R.id.time_swt_isfastest)).setChecked(false);
-//					time_option();
-//					findViewById(R.id.time_btn_stopwatch).callOnClick();
-					break;
-				case BEGIN_FASTEST_PATH://TODO
-//					if (time_start != 0L) {
-//						if (findViewById(R.id.time_btn_stopwatch).isEnabled())
-//							findViewById(R.id.time_btn_stopwatch).callOnClick();
-//						findViewById(R.id.time_btn_reset).callOnClick();
-//					}
-//					((SwitchCompat) findViewById(R.id.time_swt_isfastest)).setChecked(true);
-//					time_option();
-//					findViewById(R.id.time_btn_stopwatch).callOnClick();
-					break;
-				case SEND_ARENA_INFO:
-					for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-						if (!send_arena.equalsIgnoreCase(r_string(R.string._null)) && (i % MAZE_C) == 0) {
-							send_arena += "|";
-						}
-						send_arena += (view_string(grid_maze.findViewById(i)) + " ");
-					}
-					success = (send_arena != r_string(R.string._null));
-					break;
+			if (display_ismanual && toadd) {
+				display_manuallist.add(instruction);
+			} else {
+				switch (instruction) {
+					case FORWARD:
+						success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
+						break;
+					case REVERSE:
+						success = robot_move(enum_getdirection((((int) (robot.getRotation() + 180)) % 360) / 90));
+						break;
+					case ROTATE_LEFT:
+						robot_rotate(Enum.Direction.LEFT.get());
+						break;
+					case ROTATE_RIGHT:
+						robot_rotate(Enum.Direction.RIGHT.get());
+						break;
+					case STRAFE_LEFT:
+						robot_rotate(Enum.Direction.LEFT.get());
+						success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
+						break;
+					case STRAFE_RIGHT:
+						robot_rotate(Enum.Direction.RIGHT.get());
+						success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
+						break;
+				}
 			}
 
-			if (bt_device != null) {
-				if (success && towrite) {
-					msg_writemsg(instruction.getArduino(), instruction.getDescription());
-				}
-				if (instruction == Enum.Instruction.SEND_ARENA_INFO) {
-					msg_writemsg(send_arena, instruction.getDescription());
-				}
+			if (bt_device != null && success && towrite) {
+				msg_writemsg(instruction.getArduino(), instruction.getDescription());
 			}
 		}
 	}

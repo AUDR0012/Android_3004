@@ -4,6 +4,9 @@
 	<string name="_success">Success</string>
 	<string name="_on">Turn On</string>
 	<string name="_off">Turn Off</string>
+	<string name="_delimiter">,</string>
+	<string name="_bracket_s">{</string>
+	<string name="_bracket_e">}</string>
 
 	<string name="menu_restart">Restart</string>
 

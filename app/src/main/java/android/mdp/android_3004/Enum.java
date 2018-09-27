@@ -57,8 +57,6 @@ public class Enum {
 		ROTATE_RIGHT("Rotate Right", "tr"),
 		STRAFE_LEFT("Strafe Left", "sl"),
 		STRAFE_RIGHT("Strafe Right", "sr"),
-		BEGIN_EXPLORATION("Begin Exploration", "beginExplore"),
-		BEGIN_FASTEST_PATH("Begin Fastest Path", "beginFastest"),
 		SEND_ARENA_INFO("Send Arena Info", "sendArena"),
 
 		ORIGIN("Origin point", "origin"),//origin{x,y}
