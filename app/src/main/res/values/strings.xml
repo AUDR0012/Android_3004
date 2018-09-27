@@ -14,6 +14,8 @@
 	<string name="bt_connect_no">Not Connected</string>
 	<string name="bt_paired">Paired Devices</string>
 	<string name="bt_reconnect">Reconnect to Last Device</string>
+	<string name="bt_robust_on">Robust: On</string>
+	<string name="bt_robust_off">Robust: Off</string>
 
 	<string name="msg_header">Messaging</string>
 	<string name="msg_send">Send</string>

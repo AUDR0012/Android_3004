@@ -55,7 +55,7 @@ public class BluetoothConnectionService {
 			}
 
 			if (socket != null) {
-				connected(socket, bt_device);
+				connected(socket);
 			}
 		}
 
@@ -65,6 +65,7 @@ public class BluetoothConnectionService {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			btt_accept = null;
 		}
 	}
 
@@ -88,10 +89,9 @@ public class BluetoothConnectionService {
 
 			try {
 				socket.connect();
-				connected(socket, bt_device);
+				connected(socket);
 			} catch (IOException e) {
 				socket = reconnect(tmp);
-				e.printStackTrace();
 			}
 		}
 
@@ -106,7 +106,7 @@ public class BluetoothConnectionService {
 
 				BluetoothSocket fbs = (BluetoothSocket) m.invoke(tmp.getRemoteDevice(), params);
 				fbs.connect();
-				connected(fbs, bt_device);
+				connected(fbs);
 				return fbs;
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -117,10 +117,11 @@ public class BluetoothConnectionService {
 		void cancel() {
 			try {
 				socket.close();
-//				bt_device = null;
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			bt_device = null;
+			btt_connect = null;
 		}
 	}
 
@@ -190,13 +191,16 @@ public class BluetoothConnectionService {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+			btt_connected = null;
 		}
 	}
 
 	public synchronized void start() {
 		if (btt_connect != null) {
 			btt_connect.cancel();
-			btt_connect = null;
+		}
+		if (btt_connected != null) {
+			btt_connected.cancel();
 		}
 		if (btt_accept == null) {
 			btt_accept = new AcceptThread();
@@ -205,18 +209,20 @@ public class BluetoothConnectionService {
 	}
 
 	public void start_client(BluetoothDevice device) {
-		if (device != bt_device) {
-			btt_connect = new ConnectThread(device);
-			btt_connect.start();
-		}
+		btt_connect = new ConnectThread(device);
+		btt_connect.start();
 	}
 
-	private void connected(BluetoothSocket socket, BluetoothDevice device) {
+	private void connected(BluetoothSocket socket) {
 		btt_connected = new ConnectedThread(socket);
 		btt_connected.start();
 	}
 
 	public void write(byte[] message_out) {
 		btt_connected.write(message_out);
+	}
+
+	public BluetoothDevice getDevice() {
+		return bt_device;
 	}
 }
