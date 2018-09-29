@@ -80,9 +80,12 @@ public class MainActivity extends AppCompatActivity {
 	ArrayList<MessageText> msg_chatlist = new ArrayList<>();
 	ArrayAdapter msg_listadapter;
 
-	SensorManager sensor_manager;
-	Sensor accelerometer_sensor;
-	SensorEventListener accelerometer_sensor_listener;
+	SensorManager tilt_manager;
+	Sensor tilt_sensor;
+	SensorEventListener tilt_listener;
+	Handler tilt_handler = new Handler();
+	int tilt_delay = 1;
+	Boolean tilt_canmove = true;
 
 	Handler time_handler = new Handler();
 	long time_start;
@@ -111,7 +114,7 @@ public class MainActivity extends AppCompatActivity {
 		int[] list_onclick = {R.id.bt_swt_isrobust, R.id.tilt_swt_isoff,
 			R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
 			R.id.time_btn_stopwatch, R.id.time_btn_reset, R.id.time_swt_isfastest,
-//			R.id.point_btn_origin, R.id.point_btn_way, //TODO:MANUAL KEY-IN
+//			R.id.point_btn_origin, R.id.point_btn_way, //MANUAL KEY-IN
 			R.id.point_swt_isway, R.id.point_btn_set,
 			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig,
 			R.id.display_swt_ismanual, R.id.display_btn_update};
@@ -153,9 +156,9 @@ public class MainActivity extends AppCompatActivity {
 //		obstacle_random(); //TODO:REMOVABLE
 
 //		========== ACCELEROMETER ==========
-		sensor_manager = (SensorManager) getSystemService(SENSOR_SERVICE);
-		accelerometer_sensor = sensor_manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-		accelerometer_sensor_listener = new SensorEventListener() {
+		tilt_manager = (SensorManager) getSystemService(SENSOR_SERVICE);
+		tilt_sensor = tilt_manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+		tilt_listener = new SensorEventListener() {
 			@Override
 			public void onSensorChanged(SensorEvent sensorEvent) {
 				tilt_move(sensorEvent.values[0], sensorEvent.values[1]);
@@ -165,8 +168,15 @@ public class MainActivity extends AppCompatActivity {
 			public void onAccuracyChanged(Sensor sensor, int i) {
 			}
 		};
+		tilt_handler.postDelayed(new Runnable() {
+			@Override
+			public void run() {
+				tilt_canmove = true;
+				tilt_handler.postDelayed(this, tilt_delay * 1000);
+			}
+		}, tilt_delay * 1000);
 
-		//TODO:MANUAL KEY-IN
+		//MANUAL KEY-IN
 //		((EditText) findViewById(R.id.point_txt_x)).setHint(String.valueOf(MAZE_C - 1));
 //		((EditText) findViewById(R.id.point_txt_y)).setHint(String.valueOf(MAZE_R - 1));
 //		((EditText) findViewById(R.id.point_txt_x)).setFilters(new InputFilterMinMax[]{new InputFilterMinMax("0", String.valueOf(MAZE_C - 1))});
@@ -609,7 +619,7 @@ public class MainActivity extends AppCompatActivity {
 		menu.findItem(R.id.menu_bt_off).setVisible(on);
 		menu.findItem(R.id.menu_bt_discover).setVisible(on);
 		menu.findItem(R.id.menu_bt_find).setVisible(on);
-		menu.findItem(R.id.menu_bt_reconnect).setVisible(bt_prev != null);
+		menu.findItem(R.id.menu_bt_reconnect).setVisible(on);
 	}
 
 	protected void bt_discover() {
@@ -735,7 +745,7 @@ public class MainActivity extends AppCompatActivity {
 
 		String new_message = text;
 		if (Enum.Instruction.SEND_ARENA_INFO.getDescription().equalsIgnoreCase(description)) {
-			new_message = text.replaceAll(r_string(R.string._delimiter), "\n"); //TODO:VERIFY
+			new_message = text.replaceAll(r_string(R.string._delimiter), "\n");
 		}
 
 		msg_chatlist.add(new MessageText(false, new_message, description, getResources()));
@@ -774,7 +784,6 @@ public class MainActivity extends AppCompatActivity {
 		public void onReceive(Context context, Intent intent) {
 			String text = intent.getStringExtra("read message"),
 				description = r_string(R.string._success);
-
 			if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e))) {
 
 				Enum.Instruction instruction = enum_getinstruction(text);
@@ -881,26 +890,58 @@ public class MainActivity extends AppCompatActivity {
 		SwitchCompat s = findViewById(R.id.tilt_swt_isoff);
 		if (s.isChecked()) {
 			s.setText(R.string._on);
-			sensor_manager.unregisterListener(accelerometer_sensor_listener);
+			tilt_manager.unregisterListener(tilt_listener);
 		} else {
 			s.setText(R.string._off);
-			sensor_manager.registerListener(accelerometer_sensor_listener, accelerometer_sensor, 3);
+			tilt_manager.registerListener(tilt_listener, tilt_sensor, 3);
 		}
 	}
 
-	protected void tilt_move(float x, float y) { //TODO:SENDING/MOVING ISSUE | use timer
-		if (x > 0.5f) { //MOVE LEFT
-			robot_move(Enum.Direction.LEFT);
+	protected void tilt_move(float x, float y) {
+		if (tilt_canmove) {
+			tilt_canmove = false;
+
+			float hori = (x > 0) ? x : 0 - x,
+				vert = (y > 0) ? y : 0 - y;
+			boolean movehori = (hori > vert);
+
+			if (movehori) {
+				if (x > 0.5f) { //MOVE LEFT
+					tilt_action(Enum.Direction.LEFT);
+				}
+				if (x < -0.5f) { //MOVE RIGHT
+					tilt_action(Enum.Direction.RIGHT);
+				}
+			} else {
+				if (y > 0.5f) { //MOVE DOWN
+					tilt_action(Enum.Direction.DOWN);
+				}
+				if (y < -0.5f) { //MOVE UP
+					tilt_action(Enum.Direction.UP);
+				}
+			}
 		}
-		if (x < -0.5f) { //MOVE RIGHT
-			robot_move(Enum.Direction.RIGHT);
+	}
+
+	protected void tilt_action(Enum.Direction target) {
+		int curr = ((((int) robot.getRotation()) % 360) / 90),
+			turns = (target.get() - curr);
+		switch (turns) {
+			case -3:
+			case 1:
+				msg_movements(true, true, Enum.Instruction.ROTATE_RIGHT);
+				break;
+			case -2:
+			case 2:
+				msg_movements(true, true, Enum.Instruction.ROTATE_RIGHT);
+				msg_movements(true, true, Enum.Instruction.ROTATE_RIGHT);
+				break;
+			case -1:
+			case 3:
+				msg_movements(true, true, Enum.Instruction.ROTATE_LEFT);
+				break;
 		}
-		if (y > 0.5f) { //MOVE DOWN
-			robot_move(Enum.Direction.DOWN);
-		}
-		if (y < -0.5f) { //MOVE UP
-			robot_move(Enum.Direction.UP);
-		}
+		msg_movements(true, true, Enum.Instruction.FORWARD);
 	}
 
 	protected void time_option() {
@@ -996,7 +1037,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	//TODO:MANUAL KEY-IN
+	//MANUAL KEY-IN
 	protected String point_set1(boolean isway) {
 
 		String point_x = view_string(findViewById(R.id.point_txt_x)),
@@ -1073,7 +1114,6 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void display_toupdate() {
 		for (Enum.Instruction instruction : display_manuallist) {
-			//TODO:ASSUME ONLY MOVEMENTS
 			msg_movements(false, false, instruction);
 		}
 		display_manuallist.clear();
@@ -1209,7 +1249,7 @@ public class MainActivity extends AppCompatActivity {
 				case R.id.point_btn_set:
 					point_toset();
 					break;
-				//TODO:MANUAL KEY-IN
+				//MANUAL KEY-IN
 //				case R.id.point_btn_origin:
 //					point_set1(false);
 //					break;
@@ -1239,10 +1279,10 @@ public class MainActivity extends AppCompatActivity {
 		}
 	};
 
-	protected void msg_movements(boolean towrite, boolean toadd, Enum.Instruction instruction) {
+	protected void msg_movements(boolean towrite, boolean tolist, Enum.Instruction instruction) {
 		if (instruction != null) {
 			boolean success = true;
-			if (display_ismanual && toadd) {
+			if (display_ismanual && tolist) {
 				display_manuallist.add(instruction);
 			} else {
 				switch (instruction) {
@@ -1258,19 +1298,26 @@ public class MainActivity extends AppCompatActivity {
 					case ROTATE_RIGHT:
 						robot_rotate(Enum.Direction.RIGHT.get());
 						break;
-					case STRAFE_LEFT:
-						robot_rotate(Enum.Direction.LEFT.get());
-						success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
-						break;
-					case STRAFE_RIGHT:
-						robot_rotate(Enum.Direction.RIGHT.get());
-						success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
+					case STOP:
+						//VERIFY
+						findViewById(R.id.tilt_swt_isoff).setEnabled(false);
+						((SwitchCompat)findViewById(R.id.tilt_swt_isoff)).setChecked(true);
+						tilt_option();
+
+
+						findViewById(R.id.direction_btn_up).setEnabled(false);
+						findViewById(R.id.direction_btn_down).setEnabled(false);
+						findViewById(R.id.direction_btn_left).setEnabled(false);
+						findViewById(R.id.direction_btn_right).setEnabled(false);
 						break;
 				}
 			}
 
-			if (bt_device != null && success && towrite) {
-				msg_writemsg(instruction.getArduino(), instruction.getDescription());
+			if (success) {
+				((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
+				if (bt_device != null && towrite) {
+					msg_writemsg(instruction.getArduino(), instruction.getDescription());
+				}
 			}
 		}
 	}

@@ -61,8 +61,6 @@
 	<string name="config_save">Save</string>
 
 	<string name="status_default">No Status</string>
-	<string name="status_moving">Robot moving</string>
-	<string name="status_stop">Robot stopped</string>
 
 	<string name="error_robot_move_crash">Robot will collide with obstacle</string>
 	<string name="error_robot_move_no">Robot cannot move to that point</string>

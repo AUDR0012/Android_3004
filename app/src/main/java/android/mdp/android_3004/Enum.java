@@ -51,37 +51,40 @@ public class Enum {
 	}
 
 	public enum Instruction {
-		FORWARD("Forward", "f"),
-		REVERSE("Reverse", "r"),
-		ROTATE_LEFT("Rotate Left", "tl"),
-		ROTATE_RIGHT("Rotate Right", "tr"),
-		STRAFE_LEFT("Strafe Left", "sl"),
-		STRAFE_RIGHT("Strafe Right", "sr"),
-		SEND_ARENA_INFO("Send Arena Info", "sendArena"),
+		FORWARD("Forward", "Moving Forward", "f"),
+		REVERSE("Reverse", "Moving Backward", "r"),
+		ROTATE_LEFT("Rotate Left", "Rotating Left", "tl"),
+		ROTATE_RIGHT("Rotate Right", "Rotating Right", "tr"),
 
-		ORIGIN("Origin point", "origin"),//origin{x,y}
-		WAY("Way point", "way"),//way{x,y}
-		OBSTACLE("Obstacle", "obstacle"),//obstacle{x,y}
-		ARROW("Obstacle with Up Arrow", "arrow");//arrow{x,y,direction}
+		STOP("Robot Stop Moving", "Robot Stop", "stop"),
 
-		Instruction(String description, String arduino) {
+		SEND_ARENA_INFO("Send Arena Info", "", "sendArena"),
+
+		ORIGIN("Origin point", "", "origin"),//origin{x,y}
+		WAY("Way point", "", "way"),//way{x,y}
+		OBSTACLE("Obstacle", "", "obstacle"),//obstacle{x,y}
+		ARROW("Obstacle with Up Arrow", "", "arrow");//arrow{x,y,direction}
+
+		Instruction(String description, String status, String arduino) {
 			this.description = description;
+			this.status = status;
 			this.arduino = arduino;
 		}
 
 		private String description;
+		private String status;
 		private String arduino;
 
 		public String getDescription() {
 			return description;
 		}
 
-		public String getArduino() {
-			return arduino;
+		public String getStatus() {
+			return status;
 		}
 
-		public void setArduino(String text) {
-			arduino = text;
+		public String getArduino() {
+			return arduino;
 		}
 	}
 }
