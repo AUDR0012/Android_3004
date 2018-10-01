@@ -51,10 +51,10 @@ public class Enum {
 	}
 
 	public enum Instruction {
-		FORWARD("Forward", "Moving Forward", "f"),
-		REVERSE("Reverse", "Moving Backward", "r"),
-		ROTATE_LEFT("Rotate Left", "Rotating Left", "tl"),
-		ROTATE_RIGHT("Rotate Right", "Rotating Right", "tr"),
+		FORWARD("Forward", "Moving Forward", "w"),
+		REVERSE("Reverse", "Moving Backward", "s"),
+		ROTATE_LEFT("Rotate Left", "Rotating Left", "a"),
+		ROTATE_RIGHT("Rotate Right", "Rotating Right", "d"),
 
 		STOP("Robot Stop Moving", "Robot Stop", "stop"),
 
@@ -65,15 +65,15 @@ public class Enum {
 		OBSTACLE("Obstacle", "", "obstacle"),//obstacle{x,y}
 		ARROW("Obstacle with Up Arrow", "", "arrow");//arrow{x,y,direction}
 
-		Instruction(String description, String status, String arduino) {
+		Instruction(String description, String status, String text) {
 			this.description = description;
 			this.status = status;
-			this.arduino = arduino;
+			this.text = text;
 		}
 
 		private String description;
 		private String status;
-		private String arduino;
+		private String text;
 
 		public String getDescription() {
 			return description;
@@ -83,8 +83,24 @@ public class Enum {
 			return status;
 		}
 
-		public String getArduino() {
-			return arduino;
+		public String getText() {
+			return text;
+		}
+	}
+
+	public enum To {
+		ARDUINO("ar_"),
+		ALGORITHM("al_"),
+		RASPBERRYPI("rp_");
+
+		To(String code) {
+			this.code = code;
+		}
+
+		private String code;
+
+		public String getCode() {
+			return code;
 		}
 	}
 }

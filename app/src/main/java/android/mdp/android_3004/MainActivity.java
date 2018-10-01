@@ -319,9 +319,9 @@ public class MainActivity extends AppCompatActivity {
 		return null;
 	}
 
-	protected Enum.Instruction enum_getinstruction(String arduino) {
+	protected Enum.Instruction enum_getinstruction(String text) {
 		for (Enum.Instruction i : Enum.Instruction.values()) {
-			if (i.getArduino().equalsIgnoreCase(arduino)) {
+			if (i.getText().equalsIgnoreCase(text)) {
 				return i;
 			}
 		}
@@ -436,6 +436,8 @@ public class MainActivity extends AppCompatActivity {
 		obstacle.setGravity(Gravity.CENTER);
 		obstacle.setId(OBSTACLE_ADD + cell);
 		grid_maze.addView(obstacle);
+
+		((TextView) grid_maze.getChildAt(cell)).setText(face);
 	}
 
 	protected void robot_go() {
@@ -740,7 +742,8 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	protected void msg_writemsg(String text, String description) {
-		byte[] bytes = text.getBytes(Charset.defaultCharset());
+		String append_text = msg_appendto(text);
+		byte[] bytes = append_text.getBytes(Charset.defaultCharset());
 		bt_connection.write(bytes);
 
 		String new_message = text;
@@ -750,6 +753,19 @@ public class MainActivity extends AppCompatActivity {
 
 		msg_chatlist.add(new MessageText(false, new_message, description, getResources()));
 		msg_listview();
+	}
+
+	protected String msg_appendto(String text) {
+		boolean contains_delimeter = text.contains(r_string(R.string._delimiter)),
+			contains_bracket = text.contains(r_string(R.string._bracket_s));
+
+		if (contains_delimeter && contains_bracket) {
+			return Enum.To.ALGORITHM.getCode() + text;
+		} else if (enum_getinstruction(text) != null) {
+			return Enum.To.ARDUINO.getCode() + text;
+		} else {
+			return text;
+		}
 	}
 
 	protected void msg_listview() {
@@ -1029,7 +1045,7 @@ public class MainActivity extends AppCompatActivity {
 					col = view_string(findViewById(R.id.point_txt_origin_x));
 					row = view_string(findViewById(R.id.point_txt_origin_y));
 				}
-				msg_writemsg(String.format("%s{%s,%s}", instruction.getArduino(), col, row), instruction.getDescription());
+				msg_writemsg(String.format("%s{%s,%s}", instruction.getText(), col, row), instruction.getDescription());
 			}
 			point_isset = !point_isset;
 			findViewById(R.id.point_swt_isway).setEnabled(!point_isset);
@@ -1301,7 +1317,7 @@ public class MainActivity extends AppCompatActivity {
 					case STOP:
 						//VERIFY
 						findViewById(R.id.tilt_swt_isoff).setEnabled(false);
-						((SwitchCompat)findViewById(R.id.tilt_swt_isoff)).setChecked(true);
+						((SwitchCompat) findViewById(R.id.tilt_swt_isoff)).setChecked(true);
 						tilt_option();
 
 
@@ -1316,7 +1332,7 @@ public class MainActivity extends AppCompatActivity {
 			if (success) {
 				((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
 				if (bt_device != null && towrite) {
-					msg_writemsg(instruction.getArduino(), instruction.getDescription());
+					msg_writemsg(instruction.getText(), instruction.getDescription());
 				}
 			}
 		}
