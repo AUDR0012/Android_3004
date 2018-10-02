@@ -3,6 +3,8 @@ package android.mdp.android_3004;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
+import android.content.ClipData;
+import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -58,14 +60,17 @@ public class MainActivity extends AppCompatActivity {
 	int origin_col = 0,
 		origin_row = MAZE_R - ROBOT_SIZE;
 
+	Menu menu;
+	LayoutInflater inflater;
+	boolean msg_showchat = false;
+
+	String mdf_string1, mdf_string2;
+
 	GridLayout grid_maze;
 	ImageView robot;
 	int point_robot, point_way;
 	boolean point_isset;
 	ArrayList<Integer> point_obstaclelist = new ArrayList<>();
-
-	Menu menu;
-	LayoutInflater inflater;
 
 	AlertDialog dialog_bt;
 	BluetoothAdapter bt_adapter = BluetoothAdapter.getDefaultAdapter();
@@ -96,6 +101,8 @@ public class MainActivity extends AppCompatActivity {
 
 	AlertDialog dialog_config;
 	SharedPreferences config_pref;
+
+	ClipboardManager copy_board;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -207,6 +214,7 @@ public class MainActivity extends AppCompatActivity {
 		mi.inflate(R.menu.menu, menu);
 
 		this.menu = menu;
+		menu.findItem(R.id.menu_mdf).setVisible(false);
 		reset_app();
 		return super.onCreateOptionsMenu(menu);
 	}
@@ -217,6 +225,11 @@ public class MainActivity extends AppCompatActivity {
 			//RESTART
 			case R.id.menu_restart:
 				reset_app();
+				return true;
+
+			//MDF
+			case R.id.menu_mdf:
+				pop_mdf().show();
 				return true;
 
 			//BLUETOOTH
@@ -257,6 +270,39 @@ public class MainActivity extends AppCompatActivity {
 			default:
 				return super.onOptionsItemSelected(item);
 		}
+	}
+
+	protected AlertDialog.Builder pop_mdf() {
+		View v = inflater.inflate(R.layout.pop_mdf, null);
+
+		final TextView tv_s1 = v.findViewById(R.id.data_txt_s1);
+		final TextView tv_s2 = v.findViewById(R.id.data_txt_s2);
+		tv_s1.setText(mdf_string1);
+		tv_s2.setText(mdf_string2);
+
+		tv_s1.setOnLongClickListener(new View.OnLongClickListener() {
+			@Override
+			public boolean onLongClick(View v) {
+				copy_data(R.string.mdf_s1);
+				return false;
+			}
+		});
+		tv_s2.setOnLongClickListener(new View.OnLongClickListener() {
+			@Override
+			public boolean onLongClick(View v) {
+				copy_data(R.string.mdf_s2);
+				return false;
+			}
+		});
+		return new AlertDialog.Builder(this).setView(v);
+	}
+
+	protected void copy_data(int string) {
+		String s = (string == R.string.mdf_s1) ? mdf_string1 : mdf_string2;
+
+		ClipData copy_clip = ClipData.newPlainText("Copied text", s);
+		copy_board.setPrimaryClip(copy_clip);
+		new_message("Copied " + r_string(string));
 	}
 
 	protected String r_string(int id) {
@@ -343,8 +389,13 @@ public class MainActivity extends AppCompatActivity {
 	protected void reset_app() {
 		bt_update(-1);
 		bt_checkpaired();
+		bt_robust_option();
+
+		mdf_string1 = r_string(R.string._null);
+		mdf_string2 = r_string(R.string._null);
 
 		config_pref = getPreferences(Context.MODE_PRIVATE);
+		copy_board = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
 		reset_cells(true);
 		point_robot = cell_id(origin_col, origin_row);
@@ -357,7 +408,6 @@ public class MainActivity extends AppCompatActivity {
 		point_update(true);
 		point_option();
 
-		bt_robust_option();
 		tilt_option();
 
 		((TextView) findViewById(R.id.time_txt_explore)).setText(R.string.time_default);
@@ -583,19 +633,24 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.bt_txt_connected).setVisibility(View.INVISIBLE);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(r_string(R.string._null));
 
-			findViewById(R.id.msg_lv_preview).setVisibility(View.INVISIBLE);
-			findViewById(R.id.msg_temp).setVisibility(View.INVISIBLE);
+			findViewById(R.id.msg_lv_preview).setVisibility(View.GONE);
+			findViewById(R.id.msg_temp).setVisibility(View.GONE);
 		} else {
-			if (dialog_bt.isShowing()) {
-				dialog_bt.dismiss();
-			}
+			if (dialog_bt.isShowing()) dialog_bt.dismiss(); //Bluetooth Dialog Box
 
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_yes);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(bt_device.getName());
 
-			findViewById(R.id.msg_lv_preview).setVisibility(View.VISIBLE);
-			if (msg_chatlist.size() == 0) findViewById(R.id.msg_temp).setVisibility(View.VISIBLE);
+			if (msg_showchat) {
+				findViewById(R.id.msg_lv_preview).setVisibility(View.VISIBLE);
+				if (msg_chatlist.size() == 0) {
+					findViewById(R.id.msg_temp).setVisibility(View.VISIBLE);
+				}
+			} else {
+				findViewById(R.id.msg_lv_preview).setVisibility(View.GONE);
+				findViewById(R.id.msg_temp).setVisibility(View.GONE);
+			}
 		}
 	}
 
@@ -653,10 +708,12 @@ public class MainActivity extends AppCompatActivity {
 
 			} else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
 
-				bt_device = bt_connection.getDevice();
-				bt_prev = bt_device;
-				bt_canceldiscover();
-				bt_checkpaired();
+				if (bt_connection != null) {
+					bt_device = bt_connection.getDevice();
+					bt_prev = bt_device;
+					bt_canceldiscover();
+					bt_checkpaired();
+				}
 
 			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
 
@@ -800,7 +857,11 @@ public class MainActivity extends AppCompatActivity {
 		public void onReceive(Context context, Intent intent) {
 			String text = intent.getStringExtra("read message"),
 				description = r_string(R.string._success);
-			if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e))) {
+
+			if (text.equalsIgnoreCase(r_string(R.string._code))) {
+				msg_showchat = !msg_showchat;
+				bt_checkpaired();
+			} else if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e))) {
 
 				Enum.Instruction instruction = enum_getinstruction(text);
 				msg_chatlist.add(new MessageText(true, text, ((instruction == null) ? r_string(R.string._null) : instruction.getDescription()), getResources()));
@@ -834,16 +895,28 @@ public class MainActivity extends AppCompatActivity {
 
 				try {
 					Enum.Instruction instruction = enum_getinstruction(text.substring(0, ch_sta));
-					int col = Integer.valueOf(text.substring(ch_sta + 1, ch_mid1)),
-						row = Integer.valueOf(text.substring(ch_mid1 + 1, (ch_mid2 == -1) ? ch_end : ch_mid2)),
-						cell = cell_id(col, cell_fliprow(row));
+					String s1 = text.substring(ch_sta + 1, ch_mid1),
+						s2 = text.substring(ch_mid1 + 1, (ch_mid2 == -1) ? ch_end : ch_mid2);
+
+					int cell;
 					Enum.Direction direction = (ch_mid2 == -1) ? null : enum_getdirection_chara(text.substring(ch_mid2 + 1, ch_end));
 
 					switch (instruction) {
+						case MDF:
+							if (ch_mid2 != -1) {
+								description = new_message(String.format("%s requires only 2 strings", instruction.getDescription()));
+							} else {
+								mdf_string1 = s1;
+								mdf_string2 = s2;
+								menu.findItem(R.id.menu_mdf).setVisible(true);
+							}
+							break;
+
 						case WAY:
 							if (ch_mid2 != -1) {
 								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
 							} else {
+								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
 								description = point_set2(true, cell, true);
 								point_update(true);
 							}
@@ -852,6 +925,7 @@ public class MainActivity extends AppCompatActivity {
 							if (ch_mid2 != -1) {
 								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
 							} else {
+								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
 								description = point_set2(false, cell, true);
 								point_update(false);
 							}
@@ -860,6 +934,7 @@ public class MainActivity extends AppCompatActivity {
 							if (ch_mid2 != -1) {
 								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
 							} else {
+								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
 								description = obstacle_create(cell);
 							}
 							break;
@@ -870,6 +945,8 @@ public class MainActivity extends AppCompatActivity {
 								if (direction == null) {
 									description = new_message("Invalid direction found");
 								} else {
+									cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
+
 									if (point_obstaclelist.contains(cell)) {
 										obstacle_arrow(cell, direction.getChara());
 									} else {
@@ -1275,10 +1352,18 @@ public class MainActivity extends AppCompatActivity {
 
 				//CONFIGURATIONS
 				case R.id.config_btn_f1:
-					msg_writemsg(config_getpref(true), r_string(R.string.config_f1));
+					if (msg_showchat) {
+						msg_writemsg(config_getpref(true), r_string(R.string.config_f1));
+					} else {
+						new_message(config_getpref(true));
+					}
 					break;
 				case R.id.config_btn_f2:
-					msg_writemsg(config_getpref(false), r_string(R.string.config_f2));
+					if (msg_showchat) {
+						msg_writemsg(config_getpref(false), r_string(R.string.config_f2));
+					} else {
+						new_message(config_getpref(false));
+					}
 					break;
 				case R.id.config_btn_reconfig:
 					dialog_config = pop_config().show();
@@ -1315,16 +1400,8 @@ public class MainActivity extends AppCompatActivity {
 						robot_rotate(Enum.Direction.RIGHT.get());
 						break;
 					case STOP:
-						//VERIFY
-						findViewById(R.id.tilt_swt_isoff).setEnabled(false);
-						((SwitchCompat) findViewById(R.id.tilt_swt_isoff)).setChecked(true);
-						tilt_option();
-
-
-						findViewById(R.id.direction_btn_up).setEnabled(false);
-						findViewById(R.id.direction_btn_down).setEnabled(false);
-						findViewById(R.id.direction_btn_left).setEnabled(false);
-						findViewById(R.id.direction_btn_right).setEnabled(false);
+					case CALIBRATING:
+					default:
 						break;
 				}
 			}

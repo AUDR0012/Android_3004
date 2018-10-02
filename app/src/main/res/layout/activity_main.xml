@@ -483,6 +483,7 @@
 				android:id="@+id/msg_lv_preview"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
+				android:visibility="gone"
 				android:background="@drawable/d_box"
 				android:padding="10dp" />
 

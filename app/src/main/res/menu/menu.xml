@@ -5,6 +5,13 @@
 		android:id="@+id/menu_restart"
 		android:icon="@drawable/d_restart"
 		android:title="@string/menu_restart"
+		android:visible="false"
+		app:showAsAction="ifRoom" />
+
+	<item
+		android:id="@+id/menu_mdf"
+		android:icon="@drawable/d_mdf"
+		android:title="@string/mdf_header"
 		app:showAsAction="ifRoom" />
 
 	<item

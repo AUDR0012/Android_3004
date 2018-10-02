@@ -4,11 +4,16 @@
 	<string name="_success">Success</string>
 	<string name="_on">Turn On</string>
 	<string name="_off">Turn Off</string>
+	<string name="_code">3.3</string>
 	<string name="_delimiter">,</string>
 	<string name="_bracket_s">{</string>
 	<string name="_bracket_e">}</string>
 
 	<string name="menu_restart">Restart</string>
+
+	<string name="mdf_header">Map Descriptor String</string>
+	<string name="mdf_s1">MDF String 1</string>
+	<string name="mdf_s2">MDF String 2</string>
 
 	<string name="bt_header">Bluetooth</string>
 	<string name="bt_discover">Toggle Discovery</string>

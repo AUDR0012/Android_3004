@@ -57,8 +57,10 @@ public class Enum {
 		ROTATE_RIGHT("Rotate Right", "Rotating Right", "d"),
 
 		STOP("Robot Stop Moving", "Robot Stop", "stop"),
+		CALIBRATING("Robot Auto Calibrating", "Robot Auto Calibrating", "calibrate"),
 
 		SEND_ARENA_INFO("Send Arena Info", "", "sendArena"),
+		MDF("MDF string", "", "mdf"),//mdf{s1,s2}
 
 		ORIGIN("Origin point", "", "origin"),//origin{x,y}
 		WAY("Way point", "", "way"),//way{x,y}
