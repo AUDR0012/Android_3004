@@ -4,11 +4,10 @@
 	android:layout_height="wrap_content"
 	android:orientation="vertical"
 	android:padding="5dp"
-	android:paddingEnd="14dp"
-	android:paddingStart="14dp">
+	android:paddingStart="14dp"
+	android:paddingEnd="14dp">
 
 	<TextView
-		android:id="@+id/msg_lbl_header"
 		style="@style/HeaderStyle"
 		android:layout_width="match_parent"
 		android:layout_height="30dp"
@@ -29,14 +28,14 @@
 		android:orientation="horizontal">
 
 		<EditText
-			android:id="@+id/write_txt_msg"
+			android:id="@+id/msg_txt_data"
 			android:layout_width="0dp"
 			android:layout_height="40dp"
 			android:layout_weight="1"
 			android:textSize="16sp" />
 
 		<ImageButton
-			android:id="@+id/write_btn_clear"
+			android:id="@+id/msg_btn_clear"
 			android:layout_width="20dp"
 			android:layout_height="20dp"
 			android:layout_gravity="center"
@@ -44,7 +43,7 @@
 			android:visibility="gone" />
 
 		<Button
-			android:id="@+id/write_btn_send"
+			android:id="@+id/msg_btn_send"
 			style="@style/ButtonStyle"
 			android:layout_width="70dp"
 			android:layout_height="40dp"

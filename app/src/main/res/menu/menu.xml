@@ -3,30 +3,39 @@
 	xmlns:app="http://schemas.android.com/apk/res-auto">
 	<item
 		android:id="@+id/menu_restart"
-		android:icon="@drawable/d_restart"
 		android:title="@string/menu_restart"
-		android:visible="false"
-		app:showAsAction="ifRoom" />
+		app:showAsAction="collapseActionView" />
 
 	<item
 		android:id="@+id/menu_mdf"
-		android:icon="@drawable/d_mdf"
 		android:title="@string/mdf_header"
-		app:showAsAction="ifRoom" />
+		app:showAsAction="collapseActionView" />
+
+	<item
+		android:id="@+id/menu_arrow"
+		android:title="@string/arrow_header"
+		app:showAsAction="collapseActionView" />
+
+	<item
+		android:id="@+id/menu_sensor"
+		android:title="@string/menu_sensor"
+		app:showAsAction="collapseActionView" />
+
+
 
 	<item
 		android:id="@+id/menu_bt"
 		android:icon="@drawable/d_bt_off"
 		android:title="@string/bt_header"
-		app:showAsAction="ifRoom">
+		app:showAsAction="always">
 
 		<menu>
 			<item
 				android:id="@+id/menu_bt_on"
-				android:title="@string/_on" />
+				android:title="@string/_turnon" />
 			<item
 				android:id="@+id/menu_bt_off"
-				android:title="@string/_off" />
+				android:title="@string/_turnoff" />
 			<item
 				android:id="@+id/menu_bt_discover"
 				android:title="@string/bt_discover" />

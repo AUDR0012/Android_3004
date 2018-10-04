@@ -57,7 +57,8 @@ public class Enum {
 		ROTATE_RIGHT("Rotate Right", "Rotating Right", "d"),
 
 		STOP("Robot Stop Moving", "Robot Stop", "stop"),
-		CALIBRATING("Robot Auto Calibrating", "Robot Auto Calibrating", "calibrate"),
+		CALIBRATING("Robot Calibrate", "Robot Calibrating", "calibrate"),
+		SENSOR("Robot Sensor", "Robot Sensing", "g"),
 
 		SEND_ARENA_INFO("Send Arena Info", "", "sendArena"),
 		MDF("MDF string", "", "mdf"),//mdf{s1,s2}

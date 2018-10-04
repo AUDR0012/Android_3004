@@ -27,6 +27,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SwitchCompat;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.ArrayMap;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -46,7 +47,6 @@ import android.widget.Toast;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
 	Menu menu;
 	LayoutInflater inflater;
-	boolean msg_showchat = false;
+	boolean msg_showchat = true;
 
 	String mdf_string1, mdf_string2;
 
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
 	ImageView robot;
 	int point_robot, point_way;
 	boolean point_isset;
-	ArrayList<Integer> point_obstaclelist = new ArrayList<>();
+	ArrayMap<Integer, Boolean> obst_list = new ArrayMap<>();
 
 	AlertDialog dialog_bt;
 	BluetoothAdapter bt_adapter = BluetoothAdapter.getDefaultAdapter();
@@ -81,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
 	BluetoothDevice bt_device, bt_prev = null;
 	boolean bt_display_isfind, bt_new_finding = false, bt_robust;
 
+	AlertDialog dialog_msg;
 	ListView msg_lv_chat, msg_lv_preview;
 	ArrayList<MessageText> msg_chatlist = new ArrayList<>();
 	ArrayAdapter msg_listadapter;
@@ -114,17 +115,17 @@ public class MainActivity extends AppCompatActivity {
 		inflater = LayoutInflater.from(this);
 
 		reg_bt_intentfilter();
-		LocalBroadcastManager.getInstance(this).registerReceiver(bt_msg_receiver, new IntentFilter("messaging"));
+		LocalBroadcastManager.getInstance(this).registerReceiver(msg_receiver, new IntentFilter("messaging"));
 		msg_lv_preview = findViewById(R.id.msg_lv_preview);
 
 //		========== CLICKABLE CONTROLS ==========
-		int[] list_onclick = {R.id.bt_swt_isrobust, R.id.tilt_swt_isoff,
+		int[] list_onclick = {R.id.bt_swt_isrobust, R.id.tilt_swt_ison,
 			R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
-			R.id.time_btn_stopwatch, R.id.time_btn_reset, R.id.time_swt_isfastest,
+			R.id.time_btn_stopwatch, R.id.time_swt_isfastest,
 //			R.id.point_btn_origin, R.id.point_btn_way, //MANUAL KEY-IN
 			R.id.point_swt_isway, R.id.point_btn_set,
-			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig,
-			R.id.display_swt_ismanual, R.id.display_btn_update};
+			R.id.display_swt_ismanual, R.id.display_btn_update,
+			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig};
 		for (int onclick : list_onclick) {
 			findViewById(onclick).setOnClickListener(onClickListener);
 		}
@@ -132,14 +133,14 @@ public class MainActivity extends AppCompatActivity {
 		findViewById(R.id.msg_temp).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
-				pop_message().show();
+				dialog_msg = pop_message().show();
 			}
 		});
 
 		msg_lv_preview.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-				pop_message().show();
+				dialog_msg = pop_message().show();
 			}
 		});
 
@@ -159,8 +160,6 @@ public class MainActivity extends AppCompatActivity {
 
 			grid_maze.addView(tv);
 		}
-
-//		obstacle_random(); //TODO:REMOVABLE
 
 //		========== ACCELEROMETER ==========
 		tilt_manager = (SensorManager) getSystemService(SENSOR_SERVICE);
@@ -214,7 +213,6 @@ public class MainActivity extends AppCompatActivity {
 		mi.inflate(R.menu.menu, menu);
 
 		this.menu = menu;
-		menu.findItem(R.id.menu_mdf).setVisible(false);
 		reset_app();
 		return super.onCreateOptionsMenu(menu);
 	}
@@ -222,14 +220,19 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-			//RESTART
+			//HIDING
 			case R.id.menu_restart:
 				reset_app();
 				return true;
-
-			//MDF
 			case R.id.menu_mdf:
 				pop_mdf().show();
+				return true;
+			case R.id.menu_arrow:
+				//TODO
+				pop_arrow().show();
+				return true;
+			case R.id.menu_sensor:
+				msg_writemsg("ar_c", "");
 				return true;
 
 			//BLUETOOTH
@@ -275,10 +278,11 @@ public class MainActivity extends AppCompatActivity {
 	protected AlertDialog.Builder pop_mdf() {
 		View v = inflater.inflate(R.layout.pop_mdf, null);
 
-		final TextView tv_s1 = v.findViewById(R.id.data_txt_s1);
-		final TextView tv_s2 = v.findViewById(R.id.data_txt_s2);
+		final TextView tv_s1 = v.findViewById(R.id.s1_txt_data);
+		final TextView tv_s2 = v.findViewById(R.id.s2_txt_data);
 		tv_s1.setText(mdf_string1);
 		tv_s2.setText(mdf_string2);
+
 
 		tv_s1.setOnLongClickListener(new View.OnLongClickListener() {
 			@Override
@@ -420,17 +424,36 @@ public class MainActivity extends AppCompatActivity {
 		display_option();
 	}
 
-	protected void reset_cells(boolean reset_way) {
+	protected void reset_cells(boolean reset_all) {
 		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.DEFAULT.getColor());
 
-		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-			TextView tv = (TextView) grid_maze.findViewById(i);
-			if (Integer.valueOf(view_string(tv)) != Enum.Cell.OBSTACLE.get()) {
+		if (reset_all) {
+
+			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
+				TextView tv = (TextView) grid_maze.findViewById(i);
 				tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
-				if (reset_way || (!reset_way && point_way != i)) {
-					tv.setBackground(box);
+				tv.setBackground(box);
+			}
+			for (int i = 0; i < obst_list.size(); i++) {
+				if (obst_list.valueAt(i)) {
+					View v = findViewById(OBSTACLE_ADD + obst_list.keyAt(i));
+					grid_maze.removeView(v);
 				}
 			}
+			obst_list.clear();
+
+		} else {
+
+			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
+				TextView tv = (TextView) grid_maze.findViewById(i);
+				if (Integer.valueOf(view_string(tv)) != Enum.Cell.OBSTACLE.get()) {
+					tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
+					if (point_way != i) {
+						tv.setBackground(box);
+					}
+				}
+			}
+
 		}
 	}
 
@@ -447,47 +470,56 @@ public class MainActivity extends AppCompatActivity {
 		registerReceiver(bt_receiver, filter);
 	}
 
-	protected void obstacle_random() { //TODO:REMOVABLE
-		int cell, count = (new Random()).nextInt(10) + 10;
-
-		for (int i = 0; i < count; i++) {
-			cell = (new Random()).nextInt(210) + 45;
-			if (point_obstaclelist.contains(cell)) {
-				i--;
-				continue;
-			}
-			obstacle_create(cell);
-		}
-	}
-
-	protected String obstacle_create(int cell) {
-		if (point_obstaclelist.contains(cell)) {
+	protected String obst_create(int cell) {
+		if (obst_list.containsKey(cell)) {
 			return new_message("Obstacle is already created at that cell");
 		} else {
 			Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.OBSTACLE.getColor());
 			TextView obstacle = grid_maze.findViewById(cell);
 			obstacle.setBackground(box);
 			obstacle.setText(String.valueOf(Enum.Cell.OBSTACLE.get()));
-			point_obstaclelist.add(cell);
+			obst_list.put(cell, false);
 			return r_string(R.string._success);
 		}
 	}
 
-	protected void obstacle_arrow(int cell, String face) {
+	protected void obst_arrow(int cell, String face) {
 		int col = cell % MAZE_C,
 			row = cell / MAZE_C;
 
-		TextView obstacle = new TextView(this);
-		obstacle.setBackground(new_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
-		obstacle.setRotation(0);
-		obstacle.setLayoutParams(new_layoutparams(col, row, 1));
-		obstacle.setText(face);
-		obstacle.setTextColor(Color.WHITE);
-		obstacle.setGravity(Gravity.CENTER);
-		obstacle.setId(OBSTACLE_ADD + cell);
-		grid_maze.addView(obstacle);
+		TextView obst = new TextView(this);
+		obst.setBackground(new_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
+		obst.setRotation(0);
+		obst.setLayoutParams(new_layoutparams(col, row, 1));
+		obst.setText(face);
+		obst.setTextColor(Color.WHITE);
+		obst.setGravity(Gravity.CENTER);
+		obst.setId(OBSTACLE_ADD + cell);
+		grid_maze.addView(obst);
 
+		obst_list.setValueAt(obst_list.indexOfKey(cell), true);
 		((TextView) grid_maze.getChildAt(cell)).setText(face);
+	}
+
+	protected AlertDialog.Builder pop_arrow() {
+		View v = inflater.inflate(R.layout.pop_arrow, null);
+		TextView tv_arrow = v.findViewById(R.id.arrow_txt_data);
+
+		int count = 1;
+		String text = r_string(R.string._null);
+		for (int i = 0; i < obst_list.size(); i++) {
+			if (obst_list.valueAt(i)) {
+				int cell = obst_list.keyAt(i);
+				TextView tv = findViewById(OBSTACLE_ADD + cell);
+				text += String.format("%d. (%d,%d) %s", count, cell % MAZE_C, cell / MAZE_C, tv.getText());
+			}
+		}
+		if (text == r_string(R.string._null)) {
+			text = "There are no obstacles with an Up Arrow";
+		}
+		tv_arrow.setText(text);
+
+		return new AlertDialog.Builder(this).setView(v);
 	}
 
 	protected void robot_go() {
@@ -556,7 +588,7 @@ public class MainActivity extends AppCompatActivity {
 
 		for (int r = row; r < row + ROBOT_SIZE; r++) {
 			for (int c = col; c < col + ROBOT_SIZE; c++) {
-				if (point_obstaclelist.contains(cell_id(c, r)))
+				if (obst_list.containsKey(cell_id(c, r)))
 					return true;
 			}
 		}
@@ -635,8 +667,9 @@ public class MainActivity extends AppCompatActivity {
 
 			findViewById(R.id.msg_lv_preview).setVisibility(View.GONE);
 			findViewById(R.id.msg_temp).setVisibility(View.GONE);
+			//if (dialog_msg.isShowing()) dialog_msg.dismiss();
 		} else {
-			if (dialog_bt.isShowing()) dialog_bt.dismiss(); //Bluetooth Dialog Box
+			if (dialog_bt.isShowing()) dialog_bt.dismiss();
 
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_yes);
 			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
@@ -758,8 +791,8 @@ public class MainActivity extends AppCompatActivity {
 
 	protected AlertDialog.Builder pop_message() {
 		View v = inflater.inflate(R.layout.pop_message, null);
-		final TextView tv = v.findViewById(R.id.write_txt_msg);
-		final ImageButton btn = v.findViewById(R.id.write_btn_clear);
+		final TextView tv = v.findViewById(R.id.msg_txt_data);
+		final ImageButton btn = v.findViewById(R.id.msg_btn_clear);
 		msg_lv_chat = v.findViewById(R.id.msg_lv_chat);
 		msg_listview();
 
@@ -787,7 +820,7 @@ public class MainActivity extends AppCompatActivity {
 			}
 		});
 
-		v.findViewById(R.id.write_btn_send).setOnClickListener(new View.OnClickListener() {
+		v.findViewById(R.id.msg_btn_send).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				if (view_string(tv).trim().length() > 0) {
@@ -799,17 +832,21 @@ public class MainActivity extends AppCompatActivity {
 	}
 
 	protected void msg_writemsg(String text, String description) {
-		String append_text = msg_appendto(text);
-		byte[] bytes = append_text.getBytes(Charset.defaultCharset());
-		bt_connection.write(bytes);
+		if (bt_device == null) {
+			new_message("unable to send message");
+		} else {
+			text = msg_appendto(text);
+			byte[] bytes = text.getBytes(Charset.defaultCharset());
+			bt_connection.write(bytes);
 
-		String new_message = text;
-		if (Enum.Instruction.SEND_ARENA_INFO.getDescription().equalsIgnoreCase(description)) {
-			new_message = text.replaceAll(r_string(R.string._delimiter), "\n");
+			String new_message = text;
+			if (Enum.Instruction.SEND_ARENA_INFO.getDescription().equalsIgnoreCase(description)) {
+				new_message = text.replaceAll(r_string(R.string._delimiter), "\n");
+			}
+
+			msg_chatlist.add(new MessageText(false, new_message, description, getResources()));
+			msg_listview();
 		}
-
-		msg_chatlist.add(new MessageText(false, new_message, description, getResources()));
-		msg_listview();
 	}
 
 	protected String msg_appendto(String text) {
@@ -852,10 +889,10 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	private final BroadcastReceiver bt_msg_receiver = new BroadcastReceiver() {
+	private final BroadcastReceiver msg_receiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
-			String text = intent.getStringExtra("read message"),
+			String text = intent.getStringExtra("read message").trim(),
 				description = r_string(R.string._success);
 
 			if (text.equalsIgnoreCase(r_string(R.string._code))) {
@@ -908,7 +945,6 @@ public class MainActivity extends AppCompatActivity {
 							} else {
 								mdf_string1 = s1;
 								mdf_string2 = s2;
-								menu.findItem(R.id.menu_mdf).setVisible(true);
 							}
 							break;
 
@@ -935,7 +971,7 @@ public class MainActivity extends AppCompatActivity {
 								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
 							} else {
 								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
-								description = obstacle_create(cell);
+								description = obst_create(cell);
 							}
 							break;
 						case ARROW:
@@ -947,8 +983,12 @@ public class MainActivity extends AppCompatActivity {
 								} else {
 									cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
 
-									if (point_obstaclelist.contains(cell)) {
-										obstacle_arrow(cell, direction.getChara());
+									if (obst_list.containsKey(cell)) {
+										if (obst_list.get(cell)) {
+											description = new_message("Arrow already created");
+										} else {
+											obst_arrow(cell, direction.getChara());
+										}
 									} else {
 										description = new_message("No obstacle found at that cell");
 									}
@@ -971,22 +1011,22 @@ public class MainActivity extends AppCompatActivity {
 	protected void bt_robust_option() {
 		SwitchCompat s = findViewById(R.id.bt_swt_isrobust);
 		if (s.isChecked()) {
-			s.setText(R.string.bt_robust_off);
-			bt_robust = false;
-		} else {
 			s.setText(R.string.bt_robust_on);
 			bt_robust = true;
+		} else {
+			s.setText(R.string.bt_robust_off);
+			bt_robust = false;
 		}
 	}
 
 	protected void tilt_option() {
-		SwitchCompat s = findViewById(R.id.tilt_swt_isoff);
+		SwitchCompat s = findViewById(R.id.tilt_swt_ison);
 		if (s.isChecked()) {
-			s.setText(R.string._on);
-			tilt_manager.unregisterListener(tilt_listener);
-		} else {
-			s.setText(R.string._off);
+			s.setText(R.string._turnoff);
 			tilt_manager.registerListener(tilt_listener, tilt_sensor, 3);
+		} else {
+			s.setText(R.string._turnon);
+			tilt_manager.unregisterListener(tilt_listener);
 		}
 	}
 
@@ -1046,32 +1086,38 @@ public class MainActivity extends AppCompatActivity {
 			s.setText(R.string.time_explore);
 			time_tv = findViewById(R.id.time_txt_explore);
 		}
-		findViewById(R.id.time_btn_stopwatch).setEnabled(view_string(time_tv).equalsIgnoreCase(r_string(R.string.time_default)));
-	}
-
-	protected void time_stopwatch(View v) {
-		Button b = (Button) v;
-		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_start))) {
-			time_start = SystemClock.uptimeMillis();
-			time_handler.postDelayed(time_stopwatch, 0);
-
-			findViewById(R.id.time_swt_isfastest).setEnabled(false);
-			findViewById(R.id.time_btn_reset).setEnabled(false);
-			b.setText(R.string.time_stop);
-		} else {
-			time_handler.removeCallbacks(time_stopwatch);
-
-			findViewById(R.id.time_swt_isfastest).setEnabled(true);
-			findViewById(R.id.time_btn_reset).setEnabled(true);
-			findViewById(R.id.time_btn_stopwatch).setEnabled(false);
-			b.setText(R.string.time_start);
-		}
 	}
 
 	protected void time_reset() {
 		time_start = 0L;
 		time_set(0, 0, 0);
-		findViewById(R.id.time_btn_stopwatch).setEnabled(true);
+	}
+
+	protected void time_stopwatch(View v) {
+		Button b = (Button) v;
+		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_start))) {
+
+			time_reset();
+			if (((SwitchCompat) findViewById(R.id.time_swt_isfastest)).isChecked()) {
+				msg_writemsg("al_startf", "");
+			} else {
+				msg_writemsg("al_starte", "");
+			}
+
+			time_start = SystemClock.uptimeMillis();
+			time_handler.postDelayed(time_stopwatch, 0);
+
+			findViewById(R.id.time_swt_isfastest).setEnabled(false);
+			b.setText(R.string.time_stop);
+
+		} else {
+
+			time_handler.removeCallbacks(time_stopwatch);
+
+			findViewById(R.id.time_swt_isfastest).setEnabled(true);
+			b.setText(R.string.time_start);
+
+		}
 	}
 
 	protected void time_set(int min, int sec, int millisec) {
@@ -1144,7 +1190,7 @@ public class MainActivity extends AppCompatActivity {
 
 	protected String point_set2(boolean isway, int cell, boolean iswrite) {
 		if (isway) {
-			if (point_obstaclelist.contains(cell)) {
+			if (obst_list.containsKey(cell)) {
 				return new_message("Way point cannot be on an obstacle");
 			}
 			Drawable box;
@@ -1306,7 +1352,7 @@ public class MainActivity extends AppCompatActivity {
 					break;
 
 				//ACCELEROMETER
-				case R.id.tilt_swt_isoff:
+				case R.id.tilt_swt_ison:
 					tilt_option();
 					break;
 
@@ -1331,9 +1377,6 @@ public class MainActivity extends AppCompatActivity {
 				case R.id.time_btn_stopwatch:
 					time_stopwatch(v);
 					break;
-				case R.id.time_btn_reset:
-					time_reset();
-					break;
 
 				//SET POINTS
 				case R.id.point_swt_isway:
@@ -1349,6 +1392,14 @@ public class MainActivity extends AppCompatActivity {
 //				case R.id.point_btn_way:
 //					point_set1(true);
 //					break;
+
+				//DISPLAY GRAPHICS
+				case R.id.display_swt_ismanual:
+					display_option();
+					break;
+				case R.id.display_btn_update:
+					display_toupdate();
+					break;
 
 				//CONFIGURATIONS
 				case R.id.config_btn_f1:
@@ -1367,14 +1418,6 @@ public class MainActivity extends AppCompatActivity {
 					break;
 				case R.id.config_btn_reconfig:
 					dialog_config = pop_config().show();
-					break;
-
-				//DISPLAY GRAPHICS
-				case R.id.display_swt_ismanual:
-					display_option();
-					break;
-				case R.id.display_btn_update:
-					display_toupdate();
 					break;
 			}
 		}

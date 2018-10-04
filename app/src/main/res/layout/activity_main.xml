@@ -26,8 +26,8 @@
 		android:id="@+id/ly_left"
 		android:layout_width="451dp"
 		android:layout_height="601dp"
-		android:layout_alignParentStart="true"
-		android:layout_below="@id/ly_top">
+		android:layout_below="@id/ly_top"
+		android:layout_alignParentStart="true">
 
 		<GridLayout
 			android:id="@+id/grid_maze"
@@ -39,8 +39,8 @@
 		android:id="@+id/ly_right"
 		android:layout_width="150dp"
 		android:layout_height="796dp"
-		android:layout_alignParentEnd="true"
 		android:layout_below="@id/ly_top"
+		android:layout_alignParentEnd="true"
 		android:orientation="vertical"
 		android:padding="5dp">
 
@@ -77,7 +77,6 @@
 
 		</LinearLayout>
 
-		<!--TODO:TILT_VISIBILITY-->
 		<LinearLayout
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
@@ -91,10 +90,10 @@
 				android:text="@string/tilt_header" />
 
 			<android.support.v7.widget.SwitchCompat
-				android:id="@+id/tilt_swt_isoff"
+				android:id="@+id/tilt_swt_ison"
 				android:layout_width="match_parent"
 				android:layout_height="30dp"
-				android:checked="true"
+				android:checked="false"
 				android:textColor="@color/dim_gray"
 				android:theme="@style/SwitchStyle" />
 		</LinearLayout>
@@ -141,28 +140,12 @@
 				android:textColor="@color/dim_gray"
 				android:theme="@style/SwitchStyle" />
 
-			<LinearLayout
+			<Button
+				android:id="@+id/time_btn_stopwatch"
+				style="@style/ButtonStyle"
 				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:orientation="horizontal">
-
-				<Button
-					android:id="@+id/time_btn_stopwatch"
-					style="@style/ButtonStyle"
-					android:layout_width="0dp"
-					android:layout_height="40dp"
-					android:layout_weight="1"
-					android:text="@string/time_start" />
-
-				<Button
-					android:id="@+id/time_btn_reset"
-					style="@style/ButtonStyle"
-					android:layout_width="0dp"
-					android:layout_height="40dp"
-					android:layout_weight="1"
-					android:text="@string/time_reset" />
-
-			</LinearLayout>
+				android:layout_height="40dp"
+				android:text="@string/time_start" />
 
 		</LinearLayout>
 
@@ -193,8 +176,8 @@
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:orientation="horizontal"
-					android:paddingEnd="15dp"
-					android:paddingStart="15dp">
+					android:paddingStart="15dp"
+					android:paddingEnd="15dp">
 
 					<TextView
 						android:layout_width="0dp"
@@ -233,8 +216,8 @@
 					android:layout_width="match_parent"
 					android:layout_height="wrap_content"
 					android:orientation="horizontal"
-					android:paddingEnd="15dp"
-					android:paddingStart="15dp">
+					android:paddingStart="15dp"
+					android:paddingEnd="15dp">
 
 					<TextView
 						android:layout_width="0dp"
@@ -278,7 +261,7 @@
 
 			</LinearLayout>
 
-			<!--TODO:POINTS_MANUAL KEY-IN-->
+			<!--=MANUAL KEY-IN-->
 			<LinearLayout
 				android:layout_width="match_parent"
 				android:layout_height="wrap_content"
@@ -306,8 +289,8 @@
 						android:layout_width="wrap_content"
 						android:layout_height="30dp"
 						android:gravity="bottom"
-						android:paddingEnd="0dp"
 						android:paddingStart="15dp"
+						android:paddingEnd="0dp"
 						android:text="@string/point_y_qn" />
 
 					<EditText
@@ -419,12 +402,12 @@
 		android:id="@+id/ly_bottom"
 		android:layout_width="451dp"
 		android:layout_height="196dp"
-		android:layout_alignParentBottom="true"
 		android:layout_alignParentStart="true"
-		android:paddingBottom="5dp"
-		android:paddingEnd="0dp"
+		android:layout_alignParentBottom="true"
 		android:paddingStart="5dp"
-		android:paddingTop="7dp">
+		android:paddingTop="7dp"
+		android:paddingEnd="0dp"
+		android:paddingBottom="5dp">
 
 		<GridLayout
 			android:id="@+id/grid_direction"
@@ -437,29 +420,29 @@
 			<Button
 				android:id="@+id/direction_btn_up"
 				style="@style/DirectionStyle"
-				android:layout_column="1"
 				android:layout_row="0"
+				android:layout_column="1"
 				android:rotation="0" />
 
 			<Button
 				android:id="@+id/direction_btn_down"
 				style="@style/DirectionStyle"
-				android:layout_column="1"
 				android:layout_row="2"
+				android:layout_column="1"
 				android:rotation="180" />
 
 			<Button
 				android:id="@+id/direction_btn_left"
 				style="@style/DirectionStyle"
-				android:layout_column="0"
 				android:layout_row="1"
+				android:layout_column="0"
 				android:rotation="270" />
 
 			<Button
 				android:id="@+id/direction_btn_right"
 				style="@style/DirectionStyle"
-				android:layout_column="2"
 				android:layout_row="1"
+				android:layout_column="2"
 				android:rotation="90" />
 
 		</GridLayout>
@@ -469,8 +452,8 @@
 			android:layout_width="295dp"
 			android:layout_height="match_parent"
 			android:orientation="horizontal"
-			android:paddingEnd="0dp"
-			android:paddingStart="5dp">
+			android:paddingStart="5dp"
+			android:paddingEnd="0dp">
 
 			<ImageButton
 				android:id="@+id/msg_temp"
@@ -483,9 +466,9 @@
 				android:id="@+id/msg_lv_preview"
 				android:layout_width="match_parent"
 				android:layout_height="match_parent"
-				android:visibility="gone"
 				android:background="@drawable/d_box"
-				android:padding="10dp" />
+				android:padding="10dp"
+				android:visibility="gone" />
 
 		</LinearLayout>
 
