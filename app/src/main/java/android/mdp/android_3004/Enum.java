@@ -8,7 +8,8 @@ public class Enum {
 		DEFAULT(0, Color.GREEN),
 		PASSED(1, Color.YELLOW),
 		OBSTACLE(2, Color.BLACK),
-		WAYPOINT(3, Color.RED);
+		WAY(3, Color.RED),
+		VOID(4, Color.BLUE);
 
 		Cell(int id, int color) {
 			this.id = id;
@@ -57,7 +58,7 @@ public class Enum {
 		ROTATE_RIGHT("Rotate Right", "Rotating Right", "d"),
 
 		STOP("Robot Stop Moving", "Robot Stop", "stop"),
-		CALIBRATING("Robot Calibrate", "Robot Calibrating", "calibrate"),
+		CALIBRATING("Robot Calibrate", "Robot Calibrating", "c"),
 		SENSOR("Robot Sensor", "Robot Sensing", "g"),
 
 		SEND_ARENA_INFO("Send Arena Info", "", "sendArena"),

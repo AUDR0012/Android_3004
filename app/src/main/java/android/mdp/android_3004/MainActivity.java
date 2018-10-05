@@ -37,7 +37,6 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.GridLayout;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -45,6 +44,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.math.BigInteger;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Set;
@@ -58,7 +58,8 @@ public class MainActivity extends AppCompatActivity {
 	final int OBSTACLE_ADD = 1000;
 
 	int origin_col = 0,
-		origin_row = MAZE_R - ROBOT_SIZE;
+		origin_row = MAZE_R - ROBOT_SIZE,
+		origin_temp;
 
 	Menu menu;
 	LayoutInflater inflater;
@@ -122,7 +123,6 @@ public class MainActivity extends AppCompatActivity {
 		int[] list_onclick = {R.id.bt_swt_isrobust, R.id.tilt_swt_ison,
 			R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
 			R.id.time_btn_stopwatch, R.id.time_swt_isfastest,
-//			R.id.point_btn_origin, R.id.point_btn_way, //MANUAL KEY-IN
 			R.id.point_swt_isway, R.id.point_btn_set,
 			R.id.display_swt_ismanual, R.id.display_btn_update,
 			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig};
@@ -149,12 +149,10 @@ public class MainActivity extends AppCompatActivity {
 		grid_maze.setColumnCount(MAZE_C);
 		grid_maze.setRowCount(MAZE_R);
 
-		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.DEFAULT.getColor());
 		for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 			TextView tv = new TextView(this);
 			tv.setGravity(Gravity.CENTER);
-			tv.setBackground(box);
-			tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
+			cell_update(tv, Enum.Cell.DEFAULT, true);
 			tv.setId(i);
 			tv.setOnClickListener(tv_onClickListener);
 
@@ -181,12 +179,6 @@ public class MainActivity extends AppCompatActivity {
 				tilt_handler.postDelayed(this, tilt_delay * 1000);
 			}
 		}, tilt_delay * 1000);
-
-		//MANUAL KEY-IN
-//		((EditText) findViewById(R.id.point_txt_x)).setHint(String.valueOf(MAZE_C - 1));
-//		((EditText) findViewById(R.id.point_txt_y)).setHint(String.valueOf(MAZE_R - 1));
-//		((EditText) findViewById(R.id.point_txt_x)).setFilters(new InputFilterMinMax[]{new InputFilterMinMax("0", String.valueOf(MAZE_C - 1))});
-//		((EditText) findViewById(R.id.point_txt_y)).setFilters(new InputFilterMinMax[]{new InputFilterMinMax("0", String.valueOf(MAZE_R - 1))});
 	}
 
 	@Override
@@ -228,11 +220,10 @@ public class MainActivity extends AppCompatActivity {
 				pop_mdf().show();
 				return true;
 			case R.id.menu_arrow:
-				//TODO
 				pop_arrow().show();
 				return true;
-			case R.id.menu_sensor:
-				msg_writemsg("ar_c", "");
+			case R.id.menu_sensor://TODO
+				msg_writemsg("ar_g", "");
 				return true;
 
 			//BLUETOOTH
@@ -390,6 +381,14 @@ public class MainActivity extends AppCompatActivity {
 		return cell + ((MAZE_C + 1) * (iswrite ? -1 : 1));
 	}
 
+	protected void cell_update(TextView tv, Enum.Cell type, boolean setBackground) {
+		Drawable box = new_drawable(R.drawable.d_box, type.getColor());
+		if (setBackground) {
+			tv.setBackground(box);
+		}
+		tv.setText(String.valueOf(type.get()));
+	}
+
 	protected void reset_app() {
 		bt_update(-1);
 		bt_checkpaired();
@@ -401,7 +400,8 @@ public class MainActivity extends AppCompatActivity {
 		config_pref = getPreferences(Context.MODE_PRIVATE);
 		copy_board = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
-		reset_cells(true);
+		map_reset(true);
+		map_startgoal();
 		point_robot = cell_id(origin_col, origin_row);
 		robot_go();
 		robot.setRotation(0);
@@ -418,21 +418,14 @@ public class MainActivity extends AppCompatActivity {
 		((TextView) findViewById(R.id.time_txt_fastest)).setText(R.string.time_default);
 		time_option();
 
-		((EditText) findViewById(R.id.point_txt_x)).setText(r_string(R.string._null));
-		((EditText) findViewById(R.id.point_txt_y)).setText(r_string(R.string._null));
-
 		display_option();
 	}
 
-	protected void reset_cells(boolean reset_all) {
-		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.DEFAULT.getColor());
-
+	protected void map_reset(boolean reset_all) {
 		if (reset_all) {
 
 			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-				TextView tv = (TextView) grid_maze.findViewById(i);
-				tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
-				tv.setBackground(box);
+				cell_update((TextView) grid_maze.findViewById(i), Enum.Cell.DEFAULT, true);
 			}
 			for (int i = 0; i < obst_list.size(); i++) {
 				if (obst_list.valueAt(i)) {
@@ -445,15 +438,29 @@ public class MainActivity extends AppCompatActivity {
 		} else {
 
 			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-				TextView tv = (TextView) grid_maze.findViewById(i);
-				if (Integer.valueOf(view_string(tv)) != Enum.Cell.OBSTACLE.get()) {
-					tv.setText(String.valueOf(Enum.Cell.DEFAULT.get()));
-					if (point_way != i) {
-						tv.setBackground(box);
-					}
-				}
+				cell_update((TextView) grid_maze.findViewById(i), obst_list.containsKey(i) ? Enum.Cell.OBSTACLE : Enum.Cell.DEFAULT, point_way != i);
 			}
 
+		}
+	}
+
+	protected void map_startgoal() {
+		int[] list_void = {
+			cell_id(origin_col, origin_row), //ORIGIN
+			cell_id(12, 0) //GOAL
+		};
+
+		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.VOID.getColor());
+		for (int v : list_void) {
+			int add = -1;
+			for (int i = 0; i < ROBOT_SIZE * ROBOT_SIZE; i++) {
+				if (i != 0 && (i % ROBOT_SIZE) == 0) {
+					add += (MAZE_C - ROBOT_SIZE + 1);
+				} else {
+					add++;
+				}
+				grid_maze.findViewById(v + add).setBackground(box);
+			}
 		}
 	}
 
@@ -474,10 +481,7 @@ public class MainActivity extends AppCompatActivity {
 		if (obst_list.containsKey(cell)) {
 			return new_message("Obstacle is already created at that cell");
 		} else {
-			Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.OBSTACLE.getColor());
-			TextView obstacle = grid_maze.findViewById(cell);
-			obstacle.setBackground(box);
-			obstacle.setText(String.valueOf(Enum.Cell.OBSTACLE.get()));
+			cell_update((TextView) grid_maze.findViewById(cell), Enum.Cell.OBSTACLE, true);
 			obst_list.put(cell, false);
 			return r_string(R.string._success);
 		}
@@ -498,7 +502,6 @@ public class MainActivity extends AppCompatActivity {
 		grid_maze.addView(obst);
 
 		obst_list.setValueAt(obst_list.indexOfKey(cell), true);
-		((TextView) grid_maze.getChildAt(cell)).setText(face);
 	}
 
 	protected AlertDialog.Builder pop_arrow() {
@@ -533,16 +536,12 @@ public class MainActivity extends AppCompatActivity {
 			row = point_robot / MAZE_C;
 		robot.setLayoutParams(new_layoutparams(col, row, ROBOT_SIZE));
 
-		Drawable box = new_drawable(R.drawable.d_box, Enum.Cell.PASSED.getColor());
 		TextView tv;
 		for (int r = row; r < row + ROBOT_SIZE; r++) {
 			for (int c = col; c < col + ROBOT_SIZE; c++) {
 				int cell = cell_id(c, r);
 				tv = grid_maze.findViewById(cell);
-				if (cell != point_way) {
-					tv.setBackground(box);
-				}
-				tv.setText(String.valueOf(Enum.Cell.PASSED.get()));
+				cell_update(tv, Enum.Cell.PASSED, cell != point_way);
 			}
 		}
 	}
@@ -576,6 +575,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 		if (!robot_hit(temp_location)) {
 			point_robot = temp_location;
+			map_startgoal();
 			robot_go();
 			return true;
 		}
@@ -895,6 +895,8 @@ public class MainActivity extends AppCompatActivity {
 			String text = intent.getStringExtra("read message").trim(),
 				description = r_string(R.string._success);
 
+			if (r_string(R.string._null).equalsIgnoreCase(text)) return; //no text sent
+
 			if (text.equalsIgnoreCase(r_string(R.string._code))) {
 				msg_showchat = !msg_showchat;
 				bt_checkpaired();
@@ -908,11 +910,13 @@ public class MainActivity extends AppCompatActivity {
 					switch (instruction) {
 						case SEND_ARENA_INFO:
 							String send_arena = r_string(R.string._null);
-							for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-								if (!send_arena.equalsIgnoreCase(r_string(R.string._null)) && (i % MAZE_C) == 0) {
-									send_arena += r_string(R.string._delimiter);
+							for (int r = MAZE_R - 1; r >= 0; r--) {
+								for (int c = 0; c < MAZE_C; c++) {
+									if (!send_arena.equalsIgnoreCase(r_string(R.string._null)) && c == 0) {
+										send_arena += r_string(R.string._delimiter);
+									}
+									send_arena += (view_string(grid_maze.findViewById(cell_id(c, r))) + " ");
 								}
-								send_arena += (view_string(grid_maze.findViewById(i)) + " ");
 							}
 							msg_writemsg(send_arena, instruction.getDescription());
 							break;
@@ -932,8 +936,8 @@ public class MainActivity extends AppCompatActivity {
 
 				try {
 					Enum.Instruction instruction = enum_getinstruction(text.substring(0, ch_sta));
-					String s1 = text.substring(ch_sta + 1, ch_mid1),
-						s2 = text.substring(ch_mid1 + 1, (ch_mid2 == -1) ? ch_end : ch_mid2);
+					String s1 = text.substring(ch_sta + 1, ch_mid1).trim(),
+						s2 = text.substring(ch_mid1 + 1, (ch_mid2 == -1) ? ch_end : ch_mid2).trim();
 
 					int cell;
 					Enum.Direction direction = (ch_mid2 == -1) ? null : enum_getdirection_chara(text.substring(ch_mid2 + 1, ch_end));
@@ -942,9 +946,14 @@ public class MainActivity extends AppCompatActivity {
 						case MDF:
 							if (ch_mid2 != -1) {
 								description = new_message(String.format("%s requires only 2 strings", instruction.getDescription()));
+							} else if (r_string(R.string._null).equalsIgnoreCase(s1) || r_string(R.string._null).equalsIgnoreCase(s2)) {
+								description = new_message(String.format("%s cannot have empty strings", instruction.getDescription()));
 							} else {
 								mdf_string1 = s1;
 								mdf_string2 = s2;
+								if (!display_ismanual) {
+									update_arena();
+								}
 							}
 							break;
 
@@ -953,8 +962,7 @@ public class MainActivity extends AppCompatActivity {
 								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
 							} else {
 								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
-								description = point_set2(true, cell, true);
-								point_update(true);
+								description = point_set(true, cell);
 							}
 							break;
 						case ORIGIN:
@@ -962,8 +970,10 @@ public class MainActivity extends AppCompatActivity {
 								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
 							} else {
 								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
-								description = point_set2(false, cell, true);
-								point_update(false);
+								description = point_set(false, cell);
+								if (r_string(R.string._success).equalsIgnoreCase(description)) {
+									point_setorigin();
+								}
 							}
 							break;
 						case OBSTACLE:
@@ -983,15 +993,16 @@ public class MainActivity extends AppCompatActivity {
 								} else {
 									cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
 
-									if (obst_list.containsKey(cell)) {
-										if (obst_list.get(cell)) {
-											description = new_message("Arrow already created");
-										} else {
-											obst_arrow(cell, direction.getChara());
-										}
-									} else {
-										description = new_message("No obstacle found at that cell");
-									}
+//									if (obst_list.containsKey(cell)) {
+//										if (obst_list.get(cell)) {
+//											description = new_message("Arrow already created");
+//										} else {
+//											obst_arrow(cell, direction.getChara());
+//										}
+//									} else {
+//										description = new_message("No obstacle found at that cell");
+//									} //TODO:CHECK IF OBSTACLE CREATED
+									obst_arrow(cell, direction.getChara());
 								}
 							}
 							break;
@@ -1139,8 +1150,8 @@ public class MainActivity extends AppCompatActivity {
 		public void onClick(View v) {
 			if (point_isset) {
 				SwitchCompat s = findViewById(R.id.point_swt_isway);
-				point_set2(s.isChecked(), v.getId(), true);
-				point_update(s.isChecked());
+				point_set(s.isChecked(), v.getId());
+				map_startgoal();
 			}
 		}
 	};
@@ -1159,7 +1170,7 @@ public class MainActivity extends AppCompatActivity {
 		if (point_isset && instruction == Enum.Instruction.WAY && point_way == -1) {
 			new_message("Please select a cell");
 		} else {
-			if (point_isset && bt_device != null) {
+			if (point_isset) {
 				String col, row;
 				if (instruction == Enum.Instruction.WAY) {
 					col = view_string(findViewById(R.id.point_txt_way_x));
@@ -1167,6 +1178,7 @@ public class MainActivity extends AppCompatActivity {
 				} else {
 					col = view_string(findViewById(R.id.point_txt_origin_x));
 					row = view_string(findViewById(R.id.point_txt_origin_y));
+					point_setorigin();
 				}
 				msg_writemsg(String.format("%s{%s,%s}", instruction.getText(), col, row), instruction.getDescription());
 			}
@@ -1176,19 +1188,7 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	//MANUAL KEY-IN
-	protected String point_set1(boolean isway) {
-
-		String point_x = view_string(findViewById(R.id.point_txt_x)),
-			point_y = view_string(findViewById(R.id.point_txt_y));
-		if (point_x.equalsIgnoreCase(r_string(R.string._null)) || point_y.equalsIgnoreCase(r_string(R.string._null))) {
-			return new_message("Please fill in the text fields");
-		} else {
-			return point_set2(isway, cell_id(Integer.valueOf(point_x), Integer.valueOf(point_y)), true);
-		}
-	}
-
-	protected String point_set2(boolean isway, int cell, boolean iswrite) {
+	protected String point_set(boolean isway, int cell) {
 		if (isway) {
 			if (obst_list.containsKey(cell)) {
 				return new_message("Way point cannot be on an obstacle");
@@ -1198,12 +1198,12 @@ public class MainActivity extends AppCompatActivity {
 				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(view_string(grid_maze.findViewById(point_way)))));
 				grid_maze.findViewById(point_way).setBackground(box);
 			}
-			box = new_drawable(R.drawable.d_box, Enum.Cell.WAYPOINT.getColor());
+			box = new_drawable(R.drawable.d_box, Enum.Cell.WAY.getColor());
 			grid_maze.findViewById(cell).setBackground(box);
 
 			point_way = cell;
 		} else {
-			int new_cell = cell_robot(iswrite, cell),
+			int new_cell = cell_robot(true, cell),
 				col = new_cell % MAZE_C,
 				row = new_cell / MAZE_C;
 
@@ -1215,15 +1215,23 @@ public class MainActivity extends AppCompatActivity {
 				return new_message("Robot will collide with obstacle");
 			} else {
 				point_robot = new_cell;
-				reset_cells(false);
+				map_reset(false);
 				robot_go();
-
-				origin_col = col;
-				origin_row = row;
-				robot.setRotation(0);
+				origin_temp = cell_id(col, row);
 			}
 		}
+		point_update(isway);
 		return r_string(R.string._success);
+	}
+
+	protected void point_setorigin() {
+		origin_col = origin_temp % MAZE_C;
+		origin_row = origin_temp / MAZE_C;
+		robot.setRotation(0);
+
+		map_reset(false);
+		map_startgoal();
+		robot_go();
 	}
 
 	protected void point_update(boolean isway) {
@@ -1231,7 +1239,7 @@ public class MainActivity extends AppCompatActivity {
 			((TextView) findViewById(R.id.point_txt_way_x)).setText((point_way == -1) ? "-" : String.valueOf(point_way % MAZE_C));
 			((TextView) findViewById(R.id.point_txt_way_y)).setText((point_way == -1) ? "-" : String.valueOf(cell_fliprow(point_way / MAZE_C)));
 		} else {
-			int cell = cell_robot(false, cell_id(origin_col, origin_row));
+			int cell = cell_robot(false, origin_temp);
 			((TextView) findViewById(R.id.point_txt_origin_x)).setText(String.valueOf(cell % MAZE_C));
 			((TextView) findViewById(R.id.point_txt_origin_y)).setText(String.valueOf(cell_fliprow(cell / MAZE_C)));
 		}
@@ -1251,11 +1259,13 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	protected void display_toupdate() {
+	protected void display_update() {
 		for (Enum.Instruction instruction : display_manuallist) {
 			msg_movements(false, false, instruction);
 		}
 		display_manuallist.clear();
+
+		update_arena();
 	}
 
 	protected AlertDialog.Builder pop_config() {
@@ -1342,6 +1352,32 @@ public class MainActivity extends AppCompatActivity {
 			config_pref.getString(r_string(R.string.config_f2), r_string(R.string.config_f2_default));
 	}
 
+	protected void update_arena() {
+		if (r_string(R.string._null).equalsIgnoreCase(mdf_string1) || r_string(R.string._null).equalsIgnoreCase(mdf_string2)) {
+			return;
+		}
+
+		String s1 = new BigInteger(mdf_string1, 16).toString(2),//mdf_string1 :: explored
+			s2 = new BigInteger("f" + mdf_string2, 16).toString(2);//mdf_string2 :: obstacles based on explored
+
+		int s2_i = 4;
+		for (int i = 0; i < s1.length() - 4; i++) {
+			int cell = cell_id(i % MAZE_C, cell_fliprow(i / MAZE_C));
+
+			if (s1.charAt(i + 2) == '1') {
+				if (s2.charAt(s2_i) == '1') {
+					cell_update((TextView) findViewById(cell), Enum.Cell.OBSTACLE, point_way != cell);
+				} else {
+					cell_update((TextView) findViewById(cell), Enum.Cell.PASSED, point_way != cell);
+				}
+				s2_i++;
+			} else {
+				cell_update((TextView) findViewById(cell), Enum.Cell.DEFAULT, point_way != cell);
+			}
+		}
+		map_startgoal();
+	}
+
 	private View.OnClickListener onClickListener = new View.OnClickListener() {
 		public void onClick(View v) {
 
@@ -1385,20 +1421,13 @@ public class MainActivity extends AppCompatActivity {
 				case R.id.point_btn_set:
 					point_toset();
 					break;
-				//MANUAL KEY-IN
-//				case R.id.point_btn_origin:
-//					point_set1(false);
-//					break;
-//				case R.id.point_btn_way:
-//					point_set1(true);
-//					break;
 
 				//DISPLAY GRAPHICS
 				case R.id.display_swt_ismanual:
 					display_option();
 					break;
 				case R.id.display_btn_update:
-					display_toupdate();
+					display_update();
 					break;
 
 				//CONFIGURATIONS

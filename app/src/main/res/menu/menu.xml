@@ -16,9 +16,10 @@
 		android:title="@string/arrow_header"
 		app:showAsAction="collapseActionView" />
 
+	<!--TODO-->
 	<item
 		android:id="@+id/menu_sensor"
-		android:title="@string/menu_sensor"
+		android:title="arduino :: g"
 		app:showAsAction="collapseActionView" />
 
 
