@@ -1471,8 +1471,6 @@ public class MainActivity extends AppCompatActivity {
 					case ROTATE_RIGHT:
 						robot_rotate(Enum.Direction.RIGHT.get());
 						break;
-					case STOP:
-					case CALIBRATING:
 					default:
 						break;
 				}
