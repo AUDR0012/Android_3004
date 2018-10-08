@@ -491,17 +491,25 @@ public class MainActivity extends AppCompatActivity {
 		int col = cell % MAZE_C,
 			row = cell / MAZE_C;
 
-		TextView obst = new TextView(this);
-		obst.setBackground(new_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
-		obst.setRotation(0);
-		obst.setLayoutParams(new_layoutparams(col, row, 1));
-		obst.setText(face);
-		obst.setTextColor(Color.WHITE);
-		obst.setGravity(Gravity.CENTER);
-		obst.setId(OBSTACLE_ADD + cell);
-		grid_maze.addView(obst);
+		TextView tv = findViewById(OBSTACLE_ADD + cell);
+		if (tv == null) {
+			tv = new TextView(this);
+			tv.setBackground(new_drawable(R.drawable.d_arrow, Color.TRANSPARENT));
+			tv.setRotation(0);
+			tv.setLayoutParams(new_layoutparams(col, row, 1));
+			tv.setTextColor(Color.WHITE);
+			tv.setGravity(Gravity.CENTER);
+			tv.setId(OBSTACLE_ADD + cell);
 
-		obst_list.setValueAt(obst_list.indexOfKey(cell), true);
+			tv.setText(face);
+			grid_maze.addView(tv);
+		} else{
+			tv.setText(face);
+		}
+
+		if (obst_list.containsKey(cell)) {
+			obst_list.setValueAt(obst_list.indexOfKey(cell), true);
+		}
 	}
 
 	protected AlertDialog.Builder pop_arrow() {
@@ -510,13 +518,22 @@ public class MainActivity extends AppCompatActivity {
 
 		int count = 1;
 		String text = r_string(R.string._null);
-		for (int i = 0; i < obst_list.size(); i++) {
-			if (obst_list.valueAt(i)) {
-				int cell = obst_list.keyAt(i);
-				TextView tv = findViewById(OBSTACLE_ADD + cell);
-				text += String.format("%d. (%d,%d) %s", count, cell % MAZE_C, cell / MAZE_C, tv.getText());
+		for (int i = 0; i < grid_maze.getChildCount(); i++) {
+			View v2 = grid_maze.getChildAt(i);
+			if ((v2.getId() / OBSTACLE_ADD) == 1) {
+				int cell = v2.getId() % OBSTACLE_ADD;
+				if (count != 1) text += "\n";
+				text += String.format("%d. %s (%d,%d)", count, ((TextView) v2).getText(), cell % MAZE_C, cell_fliprow(cell / MAZE_C));
+				count++;
 			}
 		}
+//		for (int i = 0; i < obst_list.size(); i++) { //TODO:CHECK IF OBSTACLE CREATED
+//			if (obst_list.valueAt(i)) {
+//				int cell = obst_list.keyAt(i);
+//				TextView tv = findViewById(OBSTACLE_ADD + cell);
+//				text += String.format("%d. (%d,%d) %s", count, cell % MAZE_C, cell / MAZE_C, tv.getText());
+//			}
+//		}
 		if (text == r_string(R.string._null)) {
 			text = "There are no obstacles with an Up Arrow";
 		}
@@ -1181,6 +1198,8 @@ public class MainActivity extends AppCompatActivity {
 					point_setorigin();
 				}
 				msg_writemsg(String.format("%s{%s,%s}", instruction.getText(), col, row), instruction.getDescription());
+			} else {
+				origin_temp = cell_id(origin_col, origin_row);
 			}
 			point_isset = !point_isset;
 			findViewById(R.id.point_swt_isway).setEnabled(!point_isset);

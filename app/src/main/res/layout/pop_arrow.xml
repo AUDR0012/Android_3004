@@ -19,6 +19,7 @@
 		android:id="@+id/arrow_txt_data"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
+		android:lineSpacingExtra="10dp"
 		android:background="@drawable/d_box"
 		android:padding="10dp"
 		android:textColor="@color/black" />
