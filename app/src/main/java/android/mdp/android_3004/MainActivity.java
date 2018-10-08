@@ -323,7 +323,6 @@ public class MainActivity extends AppCompatActivity {
 		lp.rowSpec = GridLayout.spec(row, size);
 		lp.height = 40 * size;
 		lp.width = 40 * size;
-
 		return lp;
 	}
 
@@ -400,11 +399,8 @@ public class MainActivity extends AppCompatActivity {
 		config_pref = getPreferences(Context.MODE_PRIVATE);
 		copy_board = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
-		map_reset(true);
-		map_startgoal();
 		point_robot = cell_id(origin_col, origin_row);
-		robot_go();
-		robot.setRotation(0);
+		robot_reset(true);
 
 		point_isset = false;
 		point_way = -1;
@@ -423,7 +419,6 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void map_reset(boolean reset_all) {
 		if (reset_all) {
-
 			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 				cell_update((TextView) grid_maze.findViewById(i), Enum.Cell.DEFAULT, true);
 			}
@@ -434,13 +429,14 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 			obst_list.clear();
-
 		} else {
-
+			boolean isobst;
 			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
-				cell_update((TextView) grid_maze.findViewById(i), obst_list.containsKey(i) ? Enum.Cell.OBSTACLE : Enum.Cell.DEFAULT, point_way != i);
+				//cell_update((TextView) grid_maze.findViewById(i), obst_list.containsKey(i) ? Enum.Cell.OBSTACLE : Enum.Cell.DEFAULT, point_way != i);
+				TextView tv = (TextView) grid_maze.findViewById(i);
+				isobst = tv.getText().toString().equalsIgnoreCase(String.valueOf(Enum.Cell.OBSTACLE.get()));
+				cell_update(tv, isobst ? Enum.Cell.OBSTACLE : Enum.Cell.DEFAULT, point_way != i);
 			}
-
 		}
 	}
 
@@ -459,7 +455,9 @@ public class MainActivity extends AppCompatActivity {
 				} else {
 					add++;
 				}
-				grid_maze.findViewById(v + add).setBackground(box);
+				if ((v + add) != point_way) {
+					grid_maze.findViewById(v + add).setBackground(box);
+				}
 			}
 		}
 	}
@@ -503,7 +501,7 @@ public class MainActivity extends AppCompatActivity {
 
 			tv.setText(face);
 			grid_maze.addView(tv);
-		} else{
+		} else {
 			tv.setText(face);
 		}
 
@@ -527,7 +525,7 @@ public class MainActivity extends AppCompatActivity {
 				count++;
 			}
 		}
-//		for (int i = 0; i < obst_list.size(); i++) { //TODO:CHECK IF OBSTACLE CREATED
+//		for (int i = 0; i < obst_list.size(); i++) {
 //			if (obst_list.valueAt(i)) {
 //				int cell = obst_list.keyAt(i);
 //				TextView tv = findViewById(OBSTACLE_ADD + cell);
@@ -535,11 +533,18 @@ public class MainActivity extends AppCompatActivity {
 //			}
 //		}
 		if (text == r_string(R.string._null)) {
-			text = "There are no obstacles with an Up Arrow";
+			text = "There are no Obstacles with an Up Arrow";
 		}
 		tv_arrow.setText(text);
 
 		return new AlertDialog.Builder(this).setView(v);
+	}
+
+	protected void robot_reset(boolean reset_all){
+		map_reset(reset_all);
+		map_startgoal();
+		robot_go();
+		robot.setRotation(0);
 	}
 
 	protected void robot_go() {
@@ -742,31 +747,24 @@ public class MainActivity extends AppCompatActivity {
 			String action = intent.getAction();
 
 			if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
-
 				if (bt_new_finding) {
 					new_message("Finding new devices...");
 				}
-
 			} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-
 				if (bt_new_finding) {
 					if (bt_newlist.size() == 0) {
 						new_message("No new devices found");
 					}
 					bt_new_finding = false;
 				}
-
 			} else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-
 				if (bt_connection != null) {
 					bt_device = bt_connection.getDevice();
 					bt_prev = bt_device;
 					bt_canceldiscover();
 					bt_checkpaired();
 				}
-
 			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
-
 				if (bt_device != null) {
 					bt_device = null;
 					bt_checkpaired();
@@ -776,9 +774,7 @@ public class MainActivity extends AppCompatActivity {
 						bt_connection.start_client(bt_prev);
 					}
 				}
-
 			} else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				switch (device.getBondState()) {
 					case BluetoothDevice.BOND_NONE:
@@ -793,13 +789,11 @@ public class MainActivity extends AppCompatActivity {
 						break;
 				}
 			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-
 				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				if (!bt_newlist.contains(device) && !bt_pairedlist.contains(device) && (device != bt_device)) {
 					bt_newlist.add(device);
 					bt_listview(context, bt_newlist);
 				}
-
 			} else {
 				//new_message(action);
 			}
@@ -970,6 +964,7 @@ public class MainActivity extends AppCompatActivity {
 								mdf_string2 = s2;
 								if (!display_ismanual) {
 									update_arena();
+									robot_go();
 								}
 							}
 							break;
@@ -1018,7 +1013,7 @@ public class MainActivity extends AppCompatActivity {
 //										}
 //									} else {
 //										description = new_message("No obstacle found at that cell");
-//									} //TODO:CHECK IF OBSTACLE CREATED
+//									}
 									obst_arrow(cell, direction.getChara());
 								}
 							}
@@ -1128,6 +1123,9 @@ public class MainActivity extends AppCompatActivity {
 			time_reset();
 			if (((SwitchCompat) findViewById(R.id.time_swt_isfastest)).isChecked()) {
 				msg_writemsg("al_startf", "");
+
+				point_robot = cell_id(origin_col, origin_row);
+				robot_reset(false);
 			} else {
 				msg_writemsg("al_starte", "");
 			}
@@ -1169,6 +1167,7 @@ public class MainActivity extends AppCompatActivity {
 				SwitchCompat s = findViewById(R.id.point_swt_isway);
 				point_set(s.isChecked(), v.getId());
 				map_startgoal();
+				robot_go();
 			}
 		}
 	};
@@ -1246,11 +1245,7 @@ public class MainActivity extends AppCompatActivity {
 	protected void point_setorigin() {
 		origin_col = origin_temp % MAZE_C;
 		origin_row = origin_temp / MAZE_C;
-		robot.setRotation(0);
-
-		map_reset(false);
-		map_startgoal();
-		robot_go();
+		robot_reset(false);
 	}
 
 	protected void point_update(boolean isway) {
@@ -1283,7 +1278,6 @@ public class MainActivity extends AppCompatActivity {
 			msg_movements(false, false, instruction);
 		}
 		display_manuallist.clear();
-
 		update_arena();
 	}
 
@@ -1380,19 +1374,19 @@ public class MainActivity extends AppCompatActivity {
 			s2 = new BigInteger("f" + mdf_string2, 16).toString(2);//mdf_string2 :: obstacles based on explored
 
 		int s2_i = 4;
+		Enum.Cell type;
 		for (int i = 0; i < s1.length() - 4; i++) {
 			int cell = cell_id(i % MAZE_C, cell_fliprow(i / MAZE_C));
 
 			if (s1.charAt(i + 2) == '1') {
-				if (s2.charAt(s2_i) == '1') {
-					cell_update((TextView) findViewById(cell), Enum.Cell.OBSTACLE, point_way != cell);
-				} else {
-					cell_update((TextView) findViewById(cell), Enum.Cell.PASSED, point_way != cell);
-				}
+				//cell_update((TextView) findViewById(cell), (s2.charAt(s2_i) == '1') ? Enum.Cell.OBSTACLE : Enum.Cell.PASSED, point_way != cell);
+				type = (s2.charAt(s2_i) == '1') ? Enum.Cell.OBSTACLE : Enum.Cell.PASSED;
 				s2_i++;
 			} else {
-				cell_update((TextView) findViewById(cell), Enum.Cell.DEFAULT, point_way != cell);
+				//cell_update((TextView) findViewById(cell), Enum.Cell.DEFAULT, point_way != cell);
+				type = Enum.Cell.DEFAULT;
 			}
+			cell_update((TextView) findViewById(cell), type, point_way != cell);
 		}
 		map_startgoal();
 	}
