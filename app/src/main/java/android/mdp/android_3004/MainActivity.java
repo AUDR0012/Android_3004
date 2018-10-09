@@ -63,7 +63,7 @@ public class MainActivity extends AppCompatActivity {
 
 	Menu menu;
 	LayoutInflater inflater;
-	boolean msg_showchat = true;
+	boolean test_showchat = true;
 
 	String mdf_string1, mdf_string2;
 
@@ -222,7 +222,10 @@ public class MainActivity extends AppCompatActivity {
 			case R.id.menu_arrow:
 				pop_arrow().show();
 				return true;
-			case R.id.menu_sensor://TODO
+			case R.id.menu_ar1://TODO
+				msg_writemsg("ar_c", "");
+				return true;
+			case R.id.menu_ar2://TODO
 				msg_writemsg("ar_g", "");
 				return true;
 
@@ -399,13 +402,11 @@ public class MainActivity extends AppCompatActivity {
 		config_pref = getPreferences(Context.MODE_PRIVATE);
 		copy_board = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
+		point_update(false);
 		point_robot = cell_id(origin_col, origin_row);
 		robot_reset(true);
 
 		point_isset = false;
-		point_way = -1;
-		point_update(false);
-		point_update(true);
 		point_option();
 
 		tilt_option();
@@ -419,6 +420,9 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void map_reset(boolean reset_all) {
 		if (reset_all) {
+			point_way = -1;
+			point_update(true);
+
 			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 				cell_update((TextView) grid_maze.findViewById(i), Enum.Cell.DEFAULT, true);
 			}
@@ -540,7 +544,7 @@ public class MainActivity extends AppCompatActivity {
 		return new AlertDialog.Builder(this).setView(v);
 	}
 
-	protected void robot_reset(boolean reset_all){
+	protected void robot_reset(boolean reset_all) {
 		map_reset(reset_all);
 		map_startgoal();
 		robot_go();
@@ -558,12 +562,14 @@ public class MainActivity extends AppCompatActivity {
 			row = point_robot / MAZE_C;
 		robot.setLayoutParams(new_layoutparams(col, row, ROBOT_SIZE));
 
-		TextView tv;
-		for (int r = row; r < row + ROBOT_SIZE; r++) {
-			for (int c = col; c < col + ROBOT_SIZE; c++) {
-				int cell = cell_id(c, r);
-				tv = grid_maze.findViewById(cell);
-				cell_update(tv, Enum.Cell.PASSED, cell != point_way);
+		if (bt_device == null) {//TODO:ROBOT BOTTOM
+			TextView tv;
+			for (int r = row; r < row + ROBOT_SIZE; r++) {
+				for (int c = col; c < col + ROBOT_SIZE; c++) {
+					int cell = cell_id(c, r);
+					tv = grid_maze.findViewById(cell);
+					cell_update(tv, Enum.Cell.PASSED, cell != point_way);
+				}
 			}
 		}
 	}
@@ -697,7 +703,7 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(bt_device.getName());
 
-			if (msg_showchat) {
+			if (test_showchat) {
 				findViewById(R.id.msg_lv_preview).setVisibility(View.VISIBLE);
 				if (msg_chatlist.size() == 0) {
 					findViewById(R.id.msg_temp).setVisibility(View.VISIBLE);
@@ -909,7 +915,7 @@ public class MainActivity extends AppCompatActivity {
 			if (r_string(R.string._null).equalsIgnoreCase(text)) return; //no text sent
 
 			if (text.equalsIgnoreCase(r_string(R.string._code))) {
-				msg_showchat = !msg_showchat;
+				test_showchat = !test_showchat;
 				bt_checkpaired();
 			} else if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e))) {
 
@@ -1128,6 +1134,11 @@ public class MainActivity extends AppCompatActivity {
 				robot_reset(false);
 			} else {
 				msg_writemsg("al_starte", "");
+
+				int temp_way = point_way;
+				point_robot = cell_id(origin_col, origin_row);
+				robot_reset(true);
+				point_set(true, temp_way);
 			}
 
 			time_start = SystemClock.uptimeMillis();
@@ -1445,14 +1456,14 @@ public class MainActivity extends AppCompatActivity {
 
 				//CONFIGURATIONS
 				case R.id.config_btn_f1:
-					if (msg_showchat) {
+					if (test_showchat) {
 						msg_writemsg(config_getpref(true), r_string(R.string.config_f1));
 					} else {
 						new_message(config_getpref(true));
 					}
 					break;
 				case R.id.config_btn_f2:
-					if (msg_showchat) {
+					if (test_showchat) {
 						msg_writemsg(config_getpref(false), r_string(R.string.config_f2));
 					} else {
 						new_message(config_getpref(false));
