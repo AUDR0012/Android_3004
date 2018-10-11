@@ -80,8 +80,7 @@
 		<LinearLayout
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:orientation="vertical"
-			android:visibility="visible">
+			android:orientation="vertical">
 
 			<TextView
 				style="@style/HeaderStyle"
@@ -249,6 +248,7 @@
 					android:id="@+id/point_swt_isway"
 					android:layout_width="match_parent"
 					android:layout_height="30dp"
+					android:checked="true"
 					android:textColor="@color/dim_gray"
 					android:theme="@style/SwitchStyle" />
 

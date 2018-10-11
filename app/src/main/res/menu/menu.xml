@@ -20,13 +20,13 @@
 	<item
 		android:id="@+id/menu_ar1"
 		android:title="arduino :: c"
+		android:visible="false"
 		app:showAsAction="collapseActionView" />
-	<!--TODO-->
 	<item
 		android:id="@+id/menu_ar2"
 		android:title="arduino :: g"
+		android:visible="false"
 		app:showAsAction="collapseActionView" />
-
 
 
 	<item

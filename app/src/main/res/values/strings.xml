@@ -5,6 +5,7 @@
 	<string name="_turnon">Turn On</string>
 	<string name="_turnoff">Turn Off</string>
 	<string name="_code">+++</string>
+	<string name="_delimiter2">;</string>
 	<string name="_delimiter">,</string>
 	<string name="_bracket_s">{</string>
 	<string name="_bracket_e">}</string>
