@@ -16,16 +16,9 @@
 		android:title="@string/arrow_header"
 		app:showAsAction="collapseActionView" />
 
-	<!--TODO-->
 	<item
-		android:id="@+id/menu_ar1"
-		android:title="arduino :: c"
-		android:visible="false"
-		app:showAsAction="collapseActionView" />
-	<item
-		android:id="@+id/menu_ar2"
-		android:title="arduino :: g"
-		android:visible="false"
+		android:id="@+id/menu_chat"
+		android:visible="true"
 		app:showAsAction="collapseActionView" />
 
 

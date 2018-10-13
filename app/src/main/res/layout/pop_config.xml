@@ -75,7 +75,7 @@
 
 	<Button
 		android:id="@+id/config_btn_save"
-		style="@style/ButtonStyle"
+		style="@style/ButtonStyle1"
 		android:layout_width="70dp"
 		android:layout_height="40dp"
 		android:text="@string/config_save" />

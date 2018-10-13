@@ -51,7 +51,7 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-	boolean test_showchat = true;
+	boolean test_showchat = false;
 
 	final int MAZE_C = 15;
 	final int MAZE_R = 20;
@@ -121,8 +121,8 @@ public class MainActivity extends AppCompatActivity {
 
 //		========== CLICKABLE CONTROLS ==========
 		int[] list_onclick = {R.id.bt_swt_isrobust, R.id.tilt_swt_ison,
-			R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right,
-			R.id.time_btn_stopwatch, R.id.time_swt_isfastest,
+			R.id.direction_btn_up, R.id.direction_btn_down, R.id.direction_btn_left, R.id.direction_btn_right, R.id.direction_btn_calib,
+			R.id.time_btn_start, R.id.time_swt_isfastest,
 			R.id.point_swt_isway, R.id.point_btn_set,
 			R.id.display_swt_ismanual, R.id.display_btn_update,
 			R.id.config_btn_f1, R.id.config_btn_f2, R.id.config_btn_reconfig};
@@ -130,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(onclick).setOnClickListener(onClickListener);
 		}
 
-		findViewById(R.id.msg_temp).setOnClickListener(new View.OnClickListener() {
+		findViewById(R.id.msg_tp_preview).setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View v) {
 				dialog_msg = pop_message().show();
@@ -222,11 +222,8 @@ public class MainActivity extends AppCompatActivity {
 			case R.id.menu_arrow:
 				pop_arrow().show();
 				return true;
-			case R.id.menu_ar1://TODO
-				msg_writemsg("ar_c", "");
-				return true;
-			case R.id.menu_ar2:
-				msg_writemsg("ar_g", "");
+			case R.id.menu_chat:
+				toggle_chat();
 				return true;
 
 			//BLUETOOTH
@@ -331,8 +328,22 @@ public class MainActivity extends AppCompatActivity {
 
 	protected Drawable new_drawable(int image, int color) {
 		Drawable box = getResources().getDrawable(image, null);
-		box.setColorFilter(color, PorterDuff.Mode.OVERLAY);
+		box.setColorFilter(color, (color == getResources().getColor(R.color.silver)) ? PorterDuff.Mode.SRC_ATOP : PorterDuff.Mode.OVERLAY);
 		return box;
+	}
+
+	protected void enable_layout(int id) {
+		View v = findViewById(id);
+		if (v instanceof GridLayout) {
+			GridLayout gl = (GridLayout) v;
+			for (int i = 0; i < gl.getChildCount(); i++) {
+				View v2 = gl.getChildAt(i);
+
+				if (v2.getTag() != null) continue;
+				v2.setEnabled(test_showchat);
+				v2.setBackground(new_drawable(R.drawable.d_arrow, test_showchat ? Color.TRANSPARENT : getResources().getColor(R.color.silver)));
+			}
+		}
 	}
 
 	protected int enum_getcolor(int id) {
@@ -415,6 +426,8 @@ public class MainActivity extends AppCompatActivity {
 		time_option();
 
 		display_option();
+
+		toggle_chat();
 	}
 
 	protected void map_reset(boolean reset_all) {
@@ -698,29 +711,29 @@ public class MainActivity extends AppCompatActivity {
 	protected void bt_checkpaired() {
 		if (bt_device == null) {
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_no);
-			findViewById(R.id.bt_txt_connected).setVisibility(View.INVISIBLE);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(r_string(R.string._null));
+			findViewById(R.id.bt_txt_connected).setVisibility(View.INVISIBLE);
 
 			findViewById(R.id.msg_lv_preview).setVisibility(View.GONE);
-			findViewById(R.id.msg_temp).setVisibility(View.GONE);
-			//if (dialog_msg.isShowing()) dialog_msg.dismiss();
+			findViewById(R.id.msg_tp_preview).setVisibility(View.GONE);
 		} else {
 			if (dialog_bt.isShowing()) dialog_bt.dismiss();
 
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_yes);
-			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(bt_device.getName());
+			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
 
 			if (test_showchat) {
 				findViewById(R.id.msg_lv_preview).setVisibility(View.VISIBLE);
 				if (msg_chatlist.size() == 0) {
-					findViewById(R.id.msg_temp).setVisibility(View.VISIBLE);
+					findViewById(R.id.msg_tp_preview).setVisibility(View.VISIBLE);
 				}
 			} else {
 				findViewById(R.id.msg_lv_preview).setVisibility(View.GONE);
-				findViewById(R.id.msg_temp).setVisibility(View.GONE);
+				findViewById(R.id.msg_tp_preview).setVisibility(View.GONE);
 			}
 		}
+		if (dialog_msg != null && dialog_msg.isShowing()) dialog_msg.dismiss();
 	}
 
 	protected void bt_update(int toggle) {
@@ -860,19 +873,22 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void msg_writemsg(String text, String description) {
 		if (bt_device == null) {
+
 			new_message("unable to send message");
+
 		} else {
+
 			text = msg_appendto(text);
 			byte[] bytes = text.getBytes(Charset.defaultCharset());
 			bt_connection.write(bytes);
 
-			String new_message = text;
-			if (Enum.Instruction.SEND_ARENA_INFO.getDescription().equalsIgnoreCase(description)) {
-				new_message = text.replaceAll(r_string(R.string._delimiter), "\n");
-			}
+//			if (Enum.Instruction.SEND_ARENA_INFO.getDescription().equalsIgnoreCase(description)) {
+//				text = text.replaceAll(r_string(R.string._delimiter), "\n");
+//			}
 
-			msg_chatlist.add(new MessageText(false, new_message, description, getResources()));
+			msg_chatlist.add(new MessageText(false, text, description, getResources()));
 			msg_listview();
+
 		}
 	}
 
@@ -894,7 +910,7 @@ public class MainActivity extends AppCompatActivity {
 
 		if (msg_lv_preview != null) {
 			if (msg_chatlist.size() != 0)
-				findViewById(R.id.msg_temp).setVisibility(View.GONE);
+				findViewById(R.id.msg_tp_preview).setVisibility(View.GONE);
 
 			msg_lv_preview.setAdapter(msg_listadapter);
 			msg_lv_preview.post(new Runnable() {
@@ -923,12 +939,7 @@ public class MainActivity extends AppCompatActivity {
 				description = r_string(R.string._success);
 			if (r_string(R.string._null).equalsIgnoreCase(text)) return; //no text sent
 
-			if (text.equalsIgnoreCase(r_string(R.string._code))) {
-
-				test_showchat = !test_showchat;
-				bt_checkpaired();
-
-			} else if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e)) &&
+			if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e)) &&
 				!text.contains(r_string(R.string._delimiter2))) {
 
 				try {
@@ -938,21 +949,32 @@ public class MainActivity extends AppCompatActivity {
 
 					if (instruction != null) {
 						switch (instruction) {
-							case SEND_ARENA_INFO:
-								String send_arena = r_string(R.string._null);
-								for (int r = MAZE_R - 1; r >= 0; r--) {
-									for (int c = 0; c < MAZE_C; c++) {
-										if (!send_arena.equalsIgnoreCase(r_string(R.string._null)) && c == 0) {
-											send_arena += r_string(R.string._delimiter);
-										}
-										send_arena += (view_string(grid_maze.findViewById(cell_id(c, r))) + " ");
-									}
+//							case SEND_ARENA_INFO:
+//								String send_arena = r_string(R.string._null);
+//								for (int r = MAZE_R - 1; r >= 0; r--) {
+//									for (int c = 0; c < MAZE_C; c++) {
+//										if (!send_arena.equalsIgnoreCase(r_string(R.string._null)) && c == 0) {
+//											send_arena += r_string(R.string._delimiter);
+//										}
+//										send_arena += (view_string(grid_maze.findViewById(cell_id(c, r))) + " ");
+//									}
+//								}
+//								msg_writemsg(send_arena, instruction.getDescription());
+//								break;
+
+							case STOP:
+								if (view_string(findViewById(R.id.time_btn_start)).equalsIgnoreCase(r_string(R.string.time_stop))) {
+									time_stopwatch(); //TODO
 								}
-								msg_writemsg(send_arena, instruction.getDescription());
+							case SENSOR:
+							case CALIBRATING:
+								((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
 								break;
 
-							default: //STOP or CALIBRATE or SENSOR
-								msg_movements(false, true, instruction);
+							default:
+								if (!test_showchat) {
+									new_message(text);
+								}
 								break;
 						}
 					}
@@ -978,9 +1000,9 @@ public class MainActivity extends AppCompatActivity {
 							count /= 90;
 							break;
 					}
-					for (int i = 0; i < count; i++) {
-						msg_movements(false, true, instruction);
-					}
+//					for (int i = 0; i < count; i++) {
+//						msg_movements(false, true, instruction);
+//					}
 
 					msg_chatlist.add(new MessageText(true, text, String.format("%d %s", count, instruction.getDescription()), getResources()));
 					msg_listview();
@@ -1179,8 +1201,8 @@ public class MainActivity extends AppCompatActivity {
 		time_set(0, 0, 0);
 	}
 
-	protected void time_stopwatch(View v) {
-		Button b = (Button) v;
+	protected void time_stopwatch() {
+		Button b = (Button) findViewById(R.id.time_btn_start);
 		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_start))) {
 			time_reset();
 			if (((SwitchCompat) findViewById(R.id.time_swt_isfastest)).isChecked()) {
@@ -1197,11 +1219,11 @@ public class MainActivity extends AppCompatActivity {
 				}
 			}
 			time_start = SystemClock.uptimeMillis();
-			time_handler.postDelayed(time_stopwatch, 0);
+			time_handler.postDelayed(time_runnable, 0);
 			findViewById(R.id.time_swt_isfastest).setEnabled(false);
 			b.setText(R.string.time_stop);
 		} else {
-			time_handler.removeCallbacks(time_stopwatch);
+			time_handler.removeCallbacks(time_runnable);
 
 			findViewById(R.id.time_swt_isfastest).setEnabled(true);
 			b.setText(R.string.time_start);
@@ -1212,7 +1234,7 @@ public class MainActivity extends AppCompatActivity {
 		time_tv.setText(String.format("%d:%s:%s", min, String.format("%02d", sec), String.format("%03d", millisec)));
 	}
 
-	public Runnable time_stopwatch = new Runnable() {
+	public Runnable time_runnable = new Runnable() {
 		public void run() {
 			long time_count_ms = SystemClock.uptimeMillis() - time_start;
 			int time_s = (int) (time_count_ms / 1000);
@@ -1453,6 +1475,49 @@ public class MainActivity extends AppCompatActivity {
 		map_startgoal();
 	}
 
+	protected void toggle_chat() {
+		test_showchat = !test_showchat;
+		menu.findItem(R.id.menu_chat).setTitle(String.format("Chat: %s", String.valueOf(test_showchat)));
+
+		enable_layout(R.id.layout_direction);
+		findViewById(R.id.layout_tilt).setVisibility(test_showchat ? View.VISIBLE : View.INVISIBLE);
+		findViewById(R.id.layout_display).setVisibility(test_showchat ? View.VISIBLE : View.INVISIBLE);
+		findViewById(R.id.layout_config).setVisibility(test_showchat ? View.VISIBLE : View.INVISIBLE);
+
+		bt_checkpaired();
+	}
+
+	protected void msg_movements(boolean towrite, boolean tolist, Enum.Instruction instruction) {
+		if (instruction != null) {
+			boolean success = true;
+			if (display_ismanual && tolist) {
+				display_manuallist.add(instruction);
+			} else {
+				switch (instruction) {
+					case FORWARD:
+						success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
+						break;
+					case REVERSE:
+						success = robot_move(enum_getdirection((((int) (robot.getRotation() + 180)) % 360) / 90));
+						break;
+					case ROTATE_LEFT:
+						robot_rotate(Enum.Direction.LEFT.get());
+						break;
+					case ROTATE_RIGHT:
+						robot_rotate(Enum.Direction.RIGHT.get());
+						break;
+				}
+			}
+
+			if (success) {
+				((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
+				if (bt_device != null && towrite) {
+					msg_writemsg(instruction.getText(), instruction.getDescription());
+				}
+			}
+		}
+	}
+
 	private View.OnClickListener onClickListener = new View.OnClickListener() {
 		public void onClick(View v) {
 
@@ -1480,13 +1545,16 @@ public class MainActivity extends AppCompatActivity {
 				case R.id.direction_btn_right:
 					msg_movements(true, true, Enum.Instruction.ROTATE_RIGHT);
 					break;
+				case R.id.direction_btn_calib:
+					msg_writemsg(Enum.Instruction.CALIBRATING.getText(), Enum.Instruction.CALIBRATING.getDescription());
+					break;
 
 				//STOPWATCH
 				case R.id.time_swt_isfastest:
 					time_option();
 					break;
-				case R.id.time_btn_stopwatch:
-					time_stopwatch(v);
+				case R.id.time_btn_start:
+					time_stopwatch();
 					break;
 
 				//SET POINTS
@@ -1526,37 +1594,4 @@ public class MainActivity extends AppCompatActivity {
 			}
 		}
 	};
-
-	protected void msg_movements(boolean towrite, boolean tolist, Enum.Instruction instruction) {
-		if (instruction != null) {
-			boolean success = true;
-			if (display_ismanual && tolist) {
-				display_manuallist.add(instruction);
-			} else {
-				switch (instruction) {
-					case FORWARD:
-						success = robot_move(enum_getdirection((((int) robot.getRotation()) % 360) / 90));
-						break;
-					case REVERSE:
-						success = robot_move(enum_getdirection((((int) (robot.getRotation() + 180)) % 360) / 90));
-						break;
-					case ROTATE_LEFT:
-						robot_rotate(Enum.Direction.LEFT.get());
-						break;
-					case ROTATE_RIGHT:
-						robot_rotate(Enum.Direction.RIGHT.get());
-						break;
-					default:
-						break;
-				}
-			}
-
-			if (success) {
-				((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
-				if (bt_device != null && towrite) {
-					msg_writemsg(instruction.getText(), instruction.getDescription());
-				}
-			}
-		}
-	}
 }
