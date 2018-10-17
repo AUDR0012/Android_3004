@@ -225,6 +225,9 @@ public class MainActivity extends AppCompatActivity {
 			case R.id.menu_chat:
 				toggle_chat();
 				return true;
+			case R.id.menu_sensor:
+				msg_writemsg("ar_g", "");
+				return true;
 
 			//BLUETOOTH
 			case R.id.menu_bt:
@@ -414,7 +417,7 @@ public class MainActivity extends AppCompatActivity {
 		copy_board = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
 
 		point_update(false);
-		robot_reset(true, true);
+		robot_reset(1, true);
 
 		point_isset = false;
 		point_option();
@@ -562,11 +565,14 @@ public class MainActivity extends AppCompatActivity {
 		return new AlertDialog.Builder(this).setView(v);
 	}
 
-	protected void robot_reset(boolean reset_all, boolean reset_point) {
+	protected void robot_reset(int reset_all, boolean reset_point) {
+		// 1:: reset_all
+		// 0:: reset explore
+		//-1:: reset position only
 		if (reset_point) {
 			point_robot = cell_id(origin_col, origin_row);
 		}
-		map_reset(reset_all);
+		if (reset_all > -1) map_reset(reset_all == 1);
 		map_startgoal();
 		robot_go();
 		robot.setRotation(0);
@@ -790,7 +796,7 @@ public class MainActivity extends AppCompatActivity {
 					bt_prev = bt_device;
 					bt_canceldiscover();
 					bt_checkpaired();
-					robot_reset(true, true);
+					robot_reset(1, true);
 				}
 			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
 				if (bt_device != null) {
@@ -814,7 +820,7 @@ public class MainActivity extends AppCompatActivity {
 						bt_device = device;
 						bt_prev = bt_device;
 						bt_checkpaired();
-						robot_reset(true, true);
+						robot_reset(1, true);
 						break;
 				}
 			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
@@ -1206,14 +1212,14 @@ public class MainActivity extends AppCompatActivity {
 		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_start))) {
 			time_reset();
 			if (((SwitchCompat) findViewById(R.id.time_swt_isfastest)).isChecked()) {
-				msg_writemsg("al_startf", "");
+				msg_writemsg("al_startf", "");//TODO
 
-				robot_reset(false, true);
+				robot_reset(-1, true);
 			} else {
 				msg_writemsg("al_starte", "");
 
 				int temp_way = point_way;
-				robot_reset(true, true);
+				robot_reset(1, true);
 				if (temp_way != -1) {
 					point_set(true, temp_way);
 				}
@@ -1329,7 +1335,7 @@ public class MainActivity extends AppCompatActivity {
 	protected void point_setorigin() {
 		origin_col = origin_temp % MAZE_C;
 		origin_row = origin_temp / MAZE_C;
-		robot_reset(false, false);
+		robot_reset(0, false);
 	}
 
 	protected void point_update(boolean isway) {
