@@ -34,6 +34,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.textclassifier.TextClassification;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -223,7 +224,7 @@ public class MainActivity extends AppCompatActivity {
 				pop_arrow().show();
 				return true;
 			case R.id.menu_chat:
-				toggle_chat();
+				toggle_chat(true);
 				return true;
 			case R.id.menu_sensor:
 				msg_writemsg("ar_g", "");
@@ -430,7 +431,7 @@ public class MainActivity extends AppCompatActivity {
 
 		display_option();
 
-		toggle_chat();
+		toggle_chat(false);
 	}
 
 	protected void map_reset(boolean reset_all) {
@@ -447,11 +448,15 @@ public class MainActivity extends AppCompatActivity {
 //					grid_maze.removeView(v);
 //				}
 //			}
+			ArrayList<View> arrowlist = new ArrayList<>();
 			for (int i = 0; i < grid_maze.getChildCount(); i++) {
 				View v2 = grid_maze.getChildAt(i);
 				if ((v2.getId() / OBST_ADD) == 1) {
-					grid_maze.removeView(v2);
+					arrowlist.add(v2);
 				}
+			}
+			for (View arrow : arrowlist) {
+				grid_maze.removeView(arrow);
 			}
 			obst_list.clear();
 		} else {
@@ -484,6 +489,22 @@ public class MainActivity extends AppCompatActivity {
 					grid_maze.findViewById(v + add).setBackground(box);
 				}
 			}
+		}
+	}
+
+	protected void map_checkarrow() {
+		ArrayList<View> arrowlist = new ArrayList<>();
+		for (int i = 0; i < grid_maze.getChildCount(); i++) {
+			View v2 = grid_maze.getChildAt(i);
+			if ((v2.getId() / OBST_ADD) == 1) {
+				TextView tv = (TextView) findViewById(v2.getId() % OBST_ADD);
+				if (!tv.getText().toString().equalsIgnoreCase(String.valueOf(Enum.Cell.OBSTACLE.get()))) {
+					arrowlist.add(v2);//TODO
+				}
+			}
+		}
+		for (View arrow : arrowlist) {
+			grid_maze.removeView(arrow);
 		}
 	}
 
@@ -972,6 +993,7 @@ public class MainActivity extends AppCompatActivity {
 								if (view_string(findViewById(R.id.time_btn_start)).equalsIgnoreCase(r_string(R.string.time_stop))) {
 									time_stopwatch(); //TODO
 								}
+								map_checkarrow();
 							case SENSOR:
 							case CALIBRATING:
 								((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
@@ -1481,8 +1503,10 @@ public class MainActivity extends AppCompatActivity {
 		map_startgoal();
 	}
 
-	protected void toggle_chat() {
-		test_showchat = !test_showchat;
+	protected void toggle_chat(boolean toggle) {
+		if (toggle) {
+			test_showchat = !test_showchat;
+		}
 		menu.findItem(R.id.menu_chat).setTitle(String.format("Chat: %s", String.valueOf(test_showchat)));
 
 		enable_layout(R.id.layout_direction);
