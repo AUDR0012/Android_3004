@@ -22,8 +22,12 @@
 		app:showAsAction="collapseActionView" />
 
 	<item
+		android:id="@+id/menu_crash"
+		android:title="algorithm :: crash"
+		app:showAsAction="collapseActionView" />
+
+	<item
 		android:id="@+id/menu_chat"
-		android:visible="true"
 		app:showAsAction="collapseActionView" />
 
 

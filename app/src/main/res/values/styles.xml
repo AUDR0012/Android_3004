@@ -1,7 +1,7 @@
 <resources>
 
 	<style name="ThemeGrey" parent="Base.Theme.AppCompat.Light">
-		<item name="colorPrimary">@color/light_grey</item>
+		<item name="colorPrimary">@color/silver</item>
 		<item name="colorPrimaryDark">@color/gray</item>
 		<item name="colorAccent">@color/colorAccent</item>
 	</style>

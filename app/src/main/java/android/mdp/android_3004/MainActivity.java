@@ -34,7 +34,6 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.textclassifier.TextClassification;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -228,6 +227,9 @@ public class MainActivity extends AppCompatActivity {
 				return true;
 			case R.id.menu_sensor:
 				msg_writemsg("ar_g", "");
+				return true;
+			case R.id.menu_crash://TODO
+				msg_writemsg("al_crash", "");
 				return true;
 
 			//BLUETOOTH
@@ -990,7 +992,7 @@ public class MainActivity extends AppCompatActivity {
 //								break;
 
 							case STOP:
-								if (view_string(findViewById(R.id.time_btn_start)).equalsIgnoreCase(r_string(R.string.time_stop))) {
+								if (view_string(findViewById(R.id.time_btn_start)).equalsIgnoreCase(r_string(R.string.time_isstart_true))) {
 									time_stopwatch(); //TODO
 								}
 								map_checkarrow();
@@ -1231,7 +1233,7 @@ public class MainActivity extends AppCompatActivity {
 
 	protected void time_stopwatch() {
 		Button b = (Button) findViewById(R.id.time_btn_start);
-		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_start))) {
+		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_isstart_false))) {
 			time_reset();
 			if (((SwitchCompat) findViewById(R.id.time_swt_isfastest)).isChecked()) {
 				msg_writemsg("al_startf", "");//TODO
@@ -1249,12 +1251,12 @@ public class MainActivity extends AppCompatActivity {
 			time_start = SystemClock.uptimeMillis();
 			time_handler.postDelayed(time_runnable, 0);
 			findViewById(R.id.time_swt_isfastest).setEnabled(false);
-			b.setText(R.string.time_stop);
+			b.setText(R.string.time_isstart_true);
 		} else {
 			time_handler.removeCallbacks(time_runnable);
 
 			findViewById(R.id.time_swt_isfastest).setEnabled(true);
-			b.setText(R.string.time_start);
+			b.setText(R.string.time_isstart_false);
 		}
 	}
 
@@ -1296,7 +1298,11 @@ public class MainActivity extends AppCompatActivity {
 	protected void point_toset() {
 		Enum.Instruction instruction = ((SwitchCompat) findViewById(R.id.point_swt_isway)).isChecked() ? Enum.Instruction.WAY : Enum.Instruction.ORIGIN;
 		if (point_isset && instruction == Enum.Instruction.WAY && point_way == -1) {
-			new_message("Please select a cell");
+			//new_message("Please select a cell");
+
+			point_isset = !point_isset;
+			findViewById(R.id.point_swt_isway).setEnabled(!point_isset);
+			((TextView) findViewById(R.id.point_btn_set)).setText(r_string(point_isset ? R.string.point_isset_true : R.string.point_isset_false));
 		} else {
 			if (point_isset) {
 				String col, row;
@@ -1397,11 +1403,11 @@ public class MainActivity extends AppCompatActivity {
 		View v = inflater.inflate(R.layout.pop_config, null);
 		final TextView f1_tv = v.findViewById(R.id.f1_txt_config);
 		final ImageButton f1_btn = v.findViewById(R.id.f1_btn_clear);
-		f1_tv.setHint(config_getpref(true));
+		f1_tv.setHint(config_getf1(true));
 
 		final TextView f2_tv = v.findViewById(R.id.f2_txt_config);
 		final ImageButton f2_btn = v.findViewById(R.id.f2_btn_clear);
-		f2_tv.setHint(config_getpref(false));
+		f2_tv.setHint(config_getf1(false));
 
 		f1_tv.addTextChangedListener(new TextWatcher() {
 			@Override
@@ -1468,10 +1474,10 @@ public class MainActivity extends AppCompatActivity {
 
 	protected String config_pullpref(TextView tv, boolean isf1) {
 		String s = view_string(tv).trim();
-		return (s.length() == 0) ? config_getpref(isf1) : s;
+		return (s.length() == 0) ? config_getf1(isf1) : s;
 	}
 
-	protected String config_getpref(boolean isf1) {
+	protected String config_getf1(boolean isf1) {
 		return isf1 ?
 			config_pref.getString(r_string(R.string.config_f1), r_string(R.string.config_f1_default)) :
 			config_pref.getString(r_string(R.string.config_f2), r_string(R.string.config_f2_default));
@@ -1585,6 +1591,12 @@ public class MainActivity extends AppCompatActivity {
 					break;
 				case R.id.time_btn_start:
 					time_stopwatch();
+
+					if (!test_showchat) {//TODO:disable coordinates button
+						boolean t_isenable = ((Button) findViewById(R.id.time_btn_start)).getText().toString().equalsIgnoreCase(r_string(R.string.time_isstart_false));
+						findViewById(R.id.point_swt_isway).setEnabled(t_isenable);
+						findViewById(R.id.point_btn_set).setEnabled(t_isenable);
+					}
 					break;
 
 				//SET POINTS
@@ -1593,6 +1605,12 @@ public class MainActivity extends AppCompatActivity {
 					break;
 				case R.id.point_btn_set:
 					point_toset();
+
+					if (!test_showchat) {//TODO:disable timing button
+						boolean p_isenable = ((Button) findViewById(R.id.point_btn_set)).getText().toString().equalsIgnoreCase(r_string(R.string.point_isset_false));
+						findViewById(R.id.time_swt_isfastest).setEnabled(p_isenable);
+						findViewById(R.id.time_btn_start).setEnabled(p_isenable);
+					}
 					break;
 
 				//DISPLAY GRAPHICS
@@ -1606,16 +1624,16 @@ public class MainActivity extends AppCompatActivity {
 				//CONFIGURATIONS
 				case R.id.config_btn_f1:
 					if (test_showchat) {
-						msg_writemsg(config_getpref(true), r_string(R.string.config_f1));
+						msg_writemsg(config_getf1(true), r_string(R.string.config_f1));
 					} else {
-						new_message(config_getpref(true));
+						new_message(config_getf1(true));
 					}
 					break;
 				case R.id.config_btn_f2:
 					if (test_showchat) {
-						msg_writemsg(config_getpref(false), r_string(R.string.config_f2));
+						msg_writemsg(config_getf1(false), r_string(R.string.config_f2));
 					} else {
-						new_message(config_getpref(false));
+						new_message(config_getf1(false));
 					}
 					break;
 				case R.id.config_btn_reconfig:

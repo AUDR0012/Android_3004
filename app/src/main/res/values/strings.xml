@@ -37,8 +37,8 @@
 	<string name="time_fastest_qn">Fastest Path Time:</string>
 	<string name="time_fastest">Fastest</string>
 	<string name="time_explore">Explore</string>
-	<string name="time_start">Start</string>
-	<string name="time_stop">Stop</string>
+	<string name="time_isstart_false">Start</string>
+	<string name="time_isstart_true">Stop</string>
 	<string name="time_reset">Reset</string>
 	<string name="time_default">0:00:000</string>
 
@@ -68,7 +68,4 @@
 	<string name="config_save">Save</string>
 
 	<string name="status_default">No Status</string>
-
-	<string name="error_robot_move_crash">Robot will collide with obstacle</string>
-	<string name="error_robot_move_no">Robot cannot move to that point</string>
 </resources>

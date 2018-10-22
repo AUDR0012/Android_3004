@@ -147,7 +147,7 @@
 				style="@style/ButtonStyle1"
 				android:layout_width="match_parent"
 				android:layout_height="80dp"
-				android:text="@string/time_start" />
+				android:text="@string/time_isstart_false" />
 
 		</LinearLayout>
 
