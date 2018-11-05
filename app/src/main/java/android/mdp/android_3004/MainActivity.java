@@ -51,13 +51,12 @@ import java.util.Set;
 
 public class MainActivity extends AppCompatActivity {
 
-	boolean test_showchat = false;
-
 	final int MAZE_C = 15;
 	final int MAZE_R = 20;
 	final int ROBOT_SIZE = 3;
 	final int OBST_ADD = 1000;
-
+	boolean dev_showchat = false;
+	AlertDialog dev_dialog;
 	int origin_col = 0,
 		origin_row = MAZE_R - ROBOT_SIZE,
 		origin_temp = -1;
@@ -73,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
 	boolean point_isset;
 	ArrayMap<Integer, Boolean> obst_list = new ArrayMap<>();
 
-	AlertDialog dialog_bt;
+	AlertDialog bt_dialog;
 	BluetoothAdapter bt_adapter = BluetoothAdapter.getDefaultAdapter();
 	ArrayList<BluetoothDevice> bt_newlist = new ArrayList<>(), bt_pairedlist = new ArrayList<>();
 	ListView bt_lv_device;
@@ -85,26 +84,362 @@ public class MainActivity extends AppCompatActivity {
 	AlertDialog dialog_msg;
 	ListView msg_lv_chat, msg_lv_preview;
 	ArrayList<MessageText> msg_chatlist = new ArrayList<>();
-	ArrayAdapter msg_listadapter;
+	private final BroadcastReceiver bt_receiver = new BroadcastReceiver() {
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
 
+			if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
+				if (bt_new_finding) {
+					new_message("Finding new devices...");
+				}
+			} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+				if (bt_new_finding) {
+					if (bt_newlist.size() == 0) {
+						new_message("No new devices found");
+					}
+					bt_new_finding = false;
+				}
+			} else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+				if (bt_connection != null) {
+					bt_device = bt_connection.getDevice();
+					bt_prev = bt_device;
+					bt_canceldiscover();
+					bt_checkpaired();
+					robot_reset(1, true);
+				}
+			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+				if (bt_device != null) {
+					bt_device = null;
+					bt_checkpaired();
+					msg_chatlist.clear();
+
+					if (bt_robust) {
+						bt_connection.start_client(bt_prev);
+					}
+				}
+			} else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
+				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+				switch (device.getBondState()) {
+					case BluetoothDevice.BOND_NONE:
+						break;
+					case BluetoothDevice.BOND_BONDING:
+						break;
+					case BluetoothDevice.BOND_BONDED:
+						bt_connection.start_client(device);
+						bt_device = device;
+						bt_prev = bt_device;
+						bt_checkpaired();
+						robot_reset(1, true);
+						break;
+				}
+			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+				if (!bt_newlist.contains(device) && !bt_pairedlist.contains(device) && (device != bt_device)) {
+					bt_newlist.add(device);
+					bt_listview(context, bt_newlist);
+				}
+			} else {
+				//new_message(action);
+			}
+		}
+	};
+	ArrayAdapter msg_listadapter;
 	SensorManager tilt_manager;
 	Sensor tilt_sensor;
 	SensorEventListener tilt_listener;
 	Handler tilt_handler = new Handler();
 	int tilt_delay = 1;
 	Boolean tilt_canmove = true;
-
 	Handler time_handler = new Handler();
 	long time_start;
 	TextView time_tv;
+	public Runnable time_runnable = new Runnable() {
+		public void run() {
+			long time_count_ms = SystemClock.uptimeMillis() - time_start;
+			int time_s = (int) (time_count_ms / 1000);
 
+			time_set(time_s / 60, time_s % 60, (int) (time_count_ms % 1000));
+			time_handler.postDelayed(this, 0);
+		}
+	};
 	boolean display_ismanual = false;
-	ArrayList<Enum.Instruction> display_manuallist = new ArrayList<>();
+	private final BroadcastReceiver msg_receiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String text = intent.getStringExtra("read message").trim(),
+				description = r_string(R.string._success);
+			if (r_string(R.string._null).equalsIgnoreCase(text)) return; //no text sent
 
+			if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e)) &&
+				!text.contains(r_string(R.string._delimiter2))) {
+
+				try {
+					Enum.Instruction instruction = enum_getinstruction(text);
+					msg_chatlist.add(new MessageText(true, text, ((instruction == null) ? r_string(R.string._null) : instruction.getDescription()), getResources()));
+					msg_listview();
+
+					if (instruction != null) {
+						switch (instruction) {
+
+							case STOP:
+								if (view_string(findViewById(R.id.time_btn_start)).equalsIgnoreCase(r_string(R.string.time_isstart_true))) {
+									time_stopwatch();
+
+									if (!dev_showchat) {//TODO:disable coordinates button
+										findViewById(R.id.point_swt_isway).setEnabled(true);
+										findViewById(R.id.point_btn_set).setEnabled(true);
+									}
+								}
+								map_checkarrow();
+							case SENSOR:
+							case CALIBRATING:
+								((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
+								break;
+
+							default:
+								if (!dev_showchat) {
+									new_message(text);
+								}
+								break;
+						}
+					}
+				} catch (Exception e) {
+					new_message("CRASH A");
+				}
+
+			} else if (text.contains(r_string(R.string._delimiter2))) {
+
+				try {
+					int deli = text.indexOf(r_string(R.string._delimiter2));
+
+					Enum.Instruction instruction = enum_getinstruction(text.substring(0, deli).trim());
+					int count = Integer.valueOf(text.substring(deli + 1, text.length()).trim());
+
+					switch (instruction) {
+						case FORWARD:
+						case REVERSE:
+							count /= 10;
+							break;
+						case ROTATE_LEFT:
+						case ROTATE_RIGHT:
+							count /= 90;
+							break;
+					}
+
+					msg_chatlist.add(new MessageText(true, text, String.format("%d %s", count, instruction.getDescription()), getResources()));
+					msg_listview();
+				} catch (Exception e) {
+					new_message("CRASH B");
+				}
+
+			} else {
+
+				int ch_sta = text.indexOf(r_string(R.string._bracket_s)),
+					ch_mid1 = text.indexOf(r_string(R.string._delimiter)),
+					ch_mid2 = text.indexOf(r_string(R.string._delimiter), ch_mid1 + 1),
+					ch_end = text.indexOf(r_string(R.string._bracket_e));
+
+				try {
+					Enum.Instruction instruction = enum_getinstruction(text.substring(0, ch_sta));
+					String s1 = text.substring(ch_sta + 1, ch_mid1).trim(),
+						s2 = text.substring(ch_mid1 + 1, (ch_mid2 == -1) ? ch_end : ch_mid2).trim();
+
+					int cell;
+					Enum.Direction direction = (ch_mid2 == -1) ? null : enum_getdirection_chara(text.substring(ch_mid2 + 1, ch_end));
+
+					switch (instruction) {
+						case MDF:
+							if (ch_mid2 != -1) {
+								description = new_message(String.format("%s requires only 2 strings", instruction.getDescription()));
+							} else if (r_string(R.string._null).equalsIgnoreCase(s1) || r_string(R.string._null).equalsIgnoreCase(s2)) {
+								description = new_message(String.format("%s cannot have empty strings", instruction.getDescription()));
+							} else {
+								mdf_string1 = s1;
+								mdf_string2 = s2;
+								if (!display_ismanual) {
+									update_arena();
+									robot_go();
+								}
+							}
+							break;
+
+						case WAY:
+							if (ch_mid2 != -1) {
+								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
+							} else {
+								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
+								description = point_set(true, cell);
+							}
+							break;
+						case ORIGIN:
+							if (ch_mid2 != -1) {
+								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
+							} else {
+								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
+								description = point_set(false, cell);
+								if (r_string(R.string._success).equalsIgnoreCase(description)) {
+									point_setorigin();
+								}
+							}
+							break;
+						case OBSTACLE:
+							if (ch_mid2 != -1) {
+								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
+							} else {
+								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
+								description = obst_create(cell);
+							}
+							break;
+						case ARROW:
+							if (ch_mid2 == -1) {
+								description = new_message(String.format("%s requires 3 input: x, y, direction", instruction.getDescription()));
+							} else {
+								if (direction == null) {
+									description = new_message("Invalid direction found");
+								} else {
+									cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
+
+//									if (obst_list.containsKey(cell)) {
+//										if (obst_list.get(cell)) {
+//											description = new_message("Arrow already created");
+//										} else {
+//											obst_arrow(cell, direction.getChara());
+//										}
+//									} else {
+//										description = new_message("No obstacle found at that cell");
+//									}
+									obst_arrow(cell, direction.getChara());
+								}
+							}
+							break;
+						case CENTER:
+							if (ch_mid2 == -1) {
+								description = new_message(String.format("%s requires 3 input: x, y, direction", instruction.getDescription()));
+							} else {
+								if (direction == null) {
+									description = new_message("Invalid direction found");
+								} else {
+									point_robot = cell_robot(true, cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2))));
+									robot.setRotation(direction.get() * 90);
+									robot_go();
+								}
+							}
+							break;
+						default:
+							throw new Exception();
+					}
+				} catch (Exception e) {
+					description = new_message("Syntax Error");
+				}
+
+				msg_chatlist.add(new MessageText(true, text, description, getResources()));
+				msg_listview();
+			}
+		}
+	};
+	ArrayList<Enum.Instruction> display_manuallist = new ArrayList<>();
 	AlertDialog dialog_config;
 	SharedPreferences config_pref;
-
 	ClipboardManager copy_board;
+	private View.OnClickListener tv_onClickListener = new View.OnClickListener() {
+		@Override
+		public void onClick(View v) {
+			if (point_isset) {
+				SwitchCompat s = findViewById(R.id.point_swt_isway);
+				point_set(s.isChecked(), v.getId());
+				map_startgoal();
+				robot_go();
+			}
+		}
+	};
+	private View.OnClickListener onClickListener = new View.OnClickListener() {
+		public void onClick(View v) {
+
+			switch (v.getId()) {
+				//BLUETOOTH
+				case R.id.bt_swt_isrobust:
+					bt_robust_option();
+					break;
+
+				//ACCELEROMETER
+				case R.id.tilt_swt_ison:
+					tilt_option();
+					break;
+
+				//MAZE
+				case R.id.direction_btn_up:
+					msg_movements(true, true, Enum.Instruction.FORWARD);
+					break;
+				case R.id.direction_btn_down:
+					msg_movements(true, true, Enum.Instruction.REVERSE);
+					break;
+				case R.id.direction_btn_left:
+					msg_movements(true, true, Enum.Instruction.ROTATE_LEFT);
+					break;
+				case R.id.direction_btn_right:
+					msg_movements(true, true, Enum.Instruction.ROTATE_RIGHT);
+					break;
+				case R.id.direction_btn_calib:
+					msg_writemsg(Enum.Instruction.CALIBRATING.getText(), Enum.Instruction.CALIBRATING.getDescription());
+					break;
+
+				//STOPWATCH
+				case R.id.time_swt_isfastest:
+					time_option();
+					break;
+				case R.id.time_btn_start:
+					time_stopwatch();
+
+					if (!dev_showchat) {//TODO:disable coordinates button
+						boolean t_isenable = ((Button) findViewById(R.id.time_btn_start)).getText().toString().equalsIgnoreCase(r_string(R.string.time_isstart_false));
+						findViewById(R.id.point_swt_isway).setEnabled(t_isenable);
+						findViewById(R.id.point_btn_set).setEnabled(t_isenable);
+					}
+					break;
+
+				//SET POINTS
+				case R.id.point_swt_isway:
+					point_option();
+					break;
+				case R.id.point_btn_set:
+					point_toset();
+
+					if (!dev_showchat) {//TODO:disable timing button
+						boolean p_isenable = ((Button) findViewById(R.id.point_btn_set)).getText().toString().equalsIgnoreCase(r_string(R.string.point_isset_false));
+						findViewById(R.id.time_swt_isfastest).setEnabled(p_isenable);
+						findViewById(R.id.time_btn_start).setEnabled(p_isenable);
+					}
+					break;
+
+				//DISPLAY GRAPHICS
+				case R.id.display_swt_ismanual:
+					display_option();
+					break;
+				case R.id.display_btn_update:
+					display_update();
+					break;
+
+				//CONFIGURATIONS
+				case R.id.config_btn_f1:
+					if (dev_showchat) {
+						msg_writemsg(config_getf1(true), r_string(R.string.config_f1));
+					} else {
+						new_message(config_getf1(true));
+					}
+					break;
+				case R.id.config_btn_f2:
+					if (dev_showchat) {
+						msg_writemsg(config_getf1(false), r_string(R.string.config_f2));
+					} else {
+						new_message(config_getf1(false));
+					}
+					break;
+				case R.id.config_btn_reconfig:
+					dialog_config = pop_config().show();
+					break;
+			}
+		}
+	};
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -212,27 +547,16 @@ public class MainActivity extends AppCompatActivity {
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
-			//HIDING
-			case R.id.menu_restart:
-				reset_app();
-				return true;
 			case R.id.menu_mdf:
 				pop_mdf().show();
 				return true;
 			case R.id.menu_arrow:
 				pop_arrow().show();
 				return true;
-			case R.id.menu_chat:
-				toggle_chat(true);
-				return true;
-			case R.id.menu_sensor:
-				msg_writemsg("ar_g", "");
-				return true;
-			case R.id.menu_crash://TODO
-				msg_writemsg("al_crash", "");
-				return true;
+			case R.id.menu_developer:
+				dev_dialog = pop_dev().show();
 
-			//BLUETOOTH
+				//BLUETOOTH
 			case R.id.menu_bt:
 				bt_update(-1);
 				if (bt_adapter.isEnabled() && bt_connection == null) {
@@ -256,7 +580,7 @@ public class MainActivity extends AppCompatActivity {
 						bt_canceldiscover();
 					}
 				});
-				dialog_bt = bt_dialog.show();
+				this.bt_dialog = bt_dialog.show();
 				return true;
 			case R.id.menu_bt_reconnect:
 				if (bt_prev == null) {
@@ -346,8 +670,8 @@ public class MainActivity extends AppCompatActivity {
 				View v2 = gl.getChildAt(i);
 
 				if (v2.getTag() != null) continue;
-				v2.setEnabled(test_showchat);
-				v2.setBackground(new_drawable(R.drawable.d_arrow, test_showchat ? Color.TRANSPARENT : getResources().getColor(R.color.silver)));
+				v2.setEnabled(dev_showchat);
+				v2.setBackground(new_drawable(R.drawable.d_arrow, dev_showchat ? Color.TRANSPARENT : getResources().getColor(R.color.silver)));
 			}
 		}
 	}
@@ -433,7 +757,7 @@ public class MainActivity extends AppCompatActivity {
 
 		display_option();
 
-		toggle_chat(false);
+		dev_toggle(false);
 	}
 
 	protected void map_reset(boolean reset_all) {
@@ -444,12 +768,6 @@ public class MainActivity extends AppCompatActivity {
 			for (int i = 0; i < MAZE_C * MAZE_R; i++) {
 				cell_update((TextView) grid_maze.findViewById(i), Enum.Cell.DEFAULT, true);
 			}
-//			for (int i = 0; i < obst_list.size(); i++) {
-//				if (obst_list.valueAt(i)) {
-//					View v = findViewById(OBST_ADD + obst_list.keyAt(i));
-//					grid_maze.removeView(v);
-//				}
-//			}
 			ArrayList<View> arrowlist = new ArrayList<>();
 			for (int i = 0; i < grid_maze.getChildCount(); i++) {
 				View v2 = grid_maze.getChildAt(i);
@@ -501,7 +819,7 @@ public class MainActivity extends AppCompatActivity {
 			if ((v2.getId() / OBST_ADD) == 1) {
 				TextView tv = (TextView) findViewById(v2.getId() % OBST_ADD);
 				if (!tv.getText().toString().equalsIgnoreCase(String.valueOf(Enum.Cell.OBSTACLE.get()))) {
-					arrowlist.add(v2);//TODO
+					arrowlist.add(v2);
 				}
 			}
 		}
@@ -746,13 +1064,13 @@ public class MainActivity extends AppCompatActivity {
 			findViewById(R.id.msg_lv_preview).setVisibility(View.GONE);
 			findViewById(R.id.msg_tp_preview).setVisibility(View.GONE);
 		} else {
-			if (dialog_bt.isShowing()) dialog_bt.dismiss();
+			if (bt_dialog.isShowing()) bt_dialog.dismiss();
 
 			((TextView) findViewById(R.id.bt_lbl_connected)).setText(R.string.bt_connect_yes);
 			((TextView) findViewById(R.id.bt_txt_connected)).setText(bt_device.getName());
 			findViewById(R.id.bt_txt_connected).setVisibility(View.VISIBLE);
 
-			if (test_showchat) {
+			if (dev_showchat) {
 				findViewById(R.id.msg_lv_preview).setVisibility(View.VISIBLE);
 				if (msg_chatlist.size() == 0) {
 					findViewById(R.id.msg_tp_preview).setVisibility(View.VISIBLE);
@@ -797,66 +1115,6 @@ public class MainActivity extends AppCompatActivity {
 		indent_ACTION_REQUEST_DISCOVERABLE.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
 		startActivity(indent_ACTION_REQUEST_DISCOVERABLE);
 	}
-
-	private final BroadcastReceiver bt_receiver = new BroadcastReceiver() {
-		public void onReceive(Context context, Intent intent) {
-			String action = intent.getAction();
-
-			if (BluetoothAdapter.ACTION_DISCOVERY_STARTED.equals(action)) {
-				if (bt_new_finding) {
-					new_message("Finding new devices...");
-				}
-			} else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-				if (bt_new_finding) {
-					if (bt_newlist.size() == 0) {
-						new_message("No new devices found");
-					}
-					bt_new_finding = false;
-				}
-			} else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-				if (bt_connection != null) {
-					bt_device = bt_connection.getDevice();
-					bt_prev = bt_device;
-					bt_canceldiscover();
-					bt_checkpaired();
-					robot_reset(1, true);
-				}
-			} else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
-				if (bt_device != null) {
-					bt_device = null;
-					bt_checkpaired();
-					msg_chatlist.clear();
-
-					if (bt_robust) {
-						bt_connection.start_client(bt_prev);
-					}
-				}
-			} else if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				switch (device.getBondState()) {
-					case BluetoothDevice.BOND_NONE:
-						break;
-					case BluetoothDevice.BOND_BONDING:
-						break;
-					case BluetoothDevice.BOND_BONDED:
-						bt_connection.start_client(device);
-						bt_device = device;
-						bt_prev = bt_device;
-						bt_checkpaired();
-						robot_reset(1, true);
-						break;
-				}
-			} else if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-				BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				if (!bt_newlist.contains(device) && !bt_pairedlist.contains(device) && (device != bt_device)) {
-					bt_newlist.add(device);
-					bt_listview(context, bt_newlist);
-				}
-			} else {
-				//new_message(action);
-			}
-		}
-	};
 
 	protected AlertDialog.Builder pop_message() {
 		View v = inflater.inflate(R.layout.pop_message, null);
@@ -911,10 +1169,6 @@ public class MainActivity extends AppCompatActivity {
 			byte[] bytes = text.getBytes(Charset.defaultCharset());
 			bt_connection.write(bytes);
 
-//			if (Enum.Instruction.SEND_ARENA_INFO.getDescription().equalsIgnoreCase(description)) {
-//				text = text.replaceAll(r_string(R.string._delimiter), "\n");
-//			}
-
 			msg_chatlist.add(new MessageText(false, text, description, getResources()));
 			msg_listview();
 
@@ -960,191 +1214,6 @@ public class MainActivity extends AppCompatActivity {
 			});
 		}
 	}
-
-	private final BroadcastReceiver msg_receiver = new BroadcastReceiver() {
-		@Override
-		public void onReceive(Context context, Intent intent) {
-			String text = intent.getStringExtra("read message").trim(),
-				description = r_string(R.string._success);
-			if (r_string(R.string._null).equalsIgnoreCase(text)) return; //no text sent
-
-			if (!text.contains(r_string(R.string._bracket_s)) && !text.contains(r_string(R.string._delimiter)) && !text.contains(r_string(R.string._bracket_e)) &&
-				!text.contains(r_string(R.string._delimiter2))) {
-
-				try {
-					Enum.Instruction instruction = enum_getinstruction(text);
-					msg_chatlist.add(new MessageText(true, text, ((instruction == null) ? r_string(R.string._null) : instruction.getDescription()), getResources()));
-					msg_listview();
-
-					if (instruction != null) {
-						switch (instruction) {
-//							case SEND_ARENA_INFO:
-//								String send_arena = r_string(R.string._null);
-//								for (int r = MAZE_R - 1; r >= 0; r--) {
-//									for (int c = 0; c < MAZE_C; c++) {
-//										if (!send_arena.equalsIgnoreCase(r_string(R.string._null)) && c == 0) {
-//											send_arena += r_string(R.string._delimiter);
-//										}
-//										send_arena += (view_string(grid_maze.findViewById(cell_id(c, r))) + " ");
-//									}
-//								}
-//								msg_writemsg(send_arena, instruction.getDescription());
-//								break;
-
-							case STOP:
-								if (view_string(findViewById(R.id.time_btn_start)).equalsIgnoreCase(r_string(R.string.time_isstart_true))) {
-									time_stopwatch(); //TODO
-								}
-								map_checkarrow();
-							case SENSOR:
-							case CALIBRATING:
-								((TextView) findViewById(R.id.txt_status)).setText(instruction.getStatus());
-								break;
-
-							default:
-								if (!test_showchat) {
-									new_message(text);
-								}
-								break;
-						}
-					}
-				} catch (Exception e) {
-					new_message("CRASH A");
-				}
-
-			} else if (text.contains(r_string(R.string._delimiter2))) {
-
-				try {
-					int deli = text.indexOf(r_string(R.string._delimiter2));
-
-					Enum.Instruction instruction = enum_getinstruction(text.substring(0, deli).trim());
-					int count = Integer.valueOf(text.substring(deli + 1, text.length()).trim());
-
-					switch (instruction) {
-						case FORWARD:
-						case REVERSE:
-							count /= 10;
-							break;
-						case ROTATE_LEFT:
-						case ROTATE_RIGHT:
-							count /= 90;
-							break;
-					}
-//					for (int i = 0; i < count; i++) {
-//						msg_movements(false, true, instruction);
-//					}
-
-					msg_chatlist.add(new MessageText(true, text, String.format("%d %s", count, instruction.getDescription()), getResources()));
-					msg_listview();
-				} catch (Exception e) {
-					new_message("CRASH B");
-				}
-
-			} else {
-
-				int ch_sta = text.indexOf(r_string(R.string._bracket_s)),
-					ch_mid1 = text.indexOf(r_string(R.string._delimiter)),
-					ch_mid2 = text.indexOf(r_string(R.string._delimiter), ch_mid1 + 1),
-					ch_end = text.indexOf(r_string(R.string._bracket_e));
-
-				try {
-					Enum.Instruction instruction = enum_getinstruction(text.substring(0, ch_sta));
-					String s1 = text.substring(ch_sta + 1, ch_mid1).trim(),
-						s2 = text.substring(ch_mid1 + 1, (ch_mid2 == -1) ? ch_end : ch_mid2).trim();
-
-					int cell;
-					Enum.Direction direction = (ch_mid2 == -1) ? null : enum_getdirection_chara(text.substring(ch_mid2 + 1, ch_end));
-
-					switch (instruction) {
-						case MDF:
-							if (ch_mid2 != -1) {
-								description = new_message(String.format("%s requires only 2 strings", instruction.getDescription()));
-							} else if (r_string(R.string._null).equalsIgnoreCase(s1) || r_string(R.string._null).equalsIgnoreCase(s2)) {
-								description = new_message(String.format("%s cannot have empty strings", instruction.getDescription()));
-							} else {
-								mdf_string1 = s1;
-								mdf_string2 = s2;
-								if (!display_ismanual) {
-									update_arena();
-									robot_go();
-								}
-							}
-							break;
-
-						case WAY:
-							if (ch_mid2 != -1) {
-								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
-							} else {
-								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
-								description = point_set(true, cell);
-							}
-							break;
-						case ORIGIN:
-							if (ch_mid2 != -1) {
-								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
-							} else {
-								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
-								description = point_set(false, cell);
-								if (r_string(R.string._success).equalsIgnoreCase(description)) {
-									point_setorigin();
-								}
-							}
-							break;
-						case OBSTACLE:
-							if (ch_mid2 != -1) {
-								description = new_message(String.format("%s requires only 2 input: x, y", instruction.getDescription()));
-							} else {
-								cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
-								description = obst_create(cell);
-							}
-							break;
-						case ARROW:
-							if (ch_mid2 == -1) {
-								description = new_message(String.format("%s requires 3 input: x, y, direction", instruction.getDescription()));
-							} else {
-								if (direction == null) {
-									description = new_message("Invalid direction found");
-								} else {
-									cell = cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2)));
-
-//									if (obst_list.containsKey(cell)) {
-//										if (obst_list.get(cell)) {
-//											description = new_message("Arrow already created");
-//										} else {
-//											obst_arrow(cell, direction.getChara());
-//										}
-//									} else {
-//										description = new_message("No obstacle found at that cell");
-//									}
-									obst_arrow(cell, direction.getChara());
-								}
-							}
-							break;
-						case CENTER:
-							if (ch_mid2 == -1) {
-								description = new_message(String.format("%s requires 3 input: x, y, direction", instruction.getDescription()));
-							} else {
-								if (direction == null) {
-									description = new_message("Invalid direction found");
-								} else {
-									point_robot = cell_robot(true, cell_id(Integer.valueOf(s1), cell_fliprow(Integer.valueOf(s2))));
-									robot.setRotation(direction.get() * 90);
-									robot_go();
-								}
-							}
-							break;
-						default:
-							throw new Exception();
-					}
-				} catch (Exception e) {
-					description = new_message("Syntax Error");
-				}
-
-				msg_chatlist.add(new MessageText(true, text, description, getResources()));
-				msg_listview();
-			}
-		}
-	};
 
 	protected void bt_robust_option() {
 		SwitchCompat s = findViewById(R.id.bt_swt_isrobust);
@@ -1236,7 +1305,7 @@ public class MainActivity extends AppCompatActivity {
 		if (view_string(b).equalsIgnoreCase(r_string(R.string.time_isstart_false))) {
 			time_reset();
 			if (((SwitchCompat) findViewById(R.id.time_swt_isfastest)).isChecked()) {
-				msg_writemsg("al_startf", "");//TODO
+				msg_writemsg("al_startf", "");
 
 				robot_reset(-1, true);
 			} else {
@@ -1264,28 +1333,6 @@ public class MainActivity extends AppCompatActivity {
 		time_tv.setText(String.format("%d:%s:%s", min, String.format("%02d", sec), String.format("%03d", millisec)));
 	}
 
-	public Runnable time_runnable = new Runnable() {
-		public void run() {
-			long time_count_ms = SystemClock.uptimeMillis() - time_start;
-			int time_s = (int) (time_count_ms / 1000);
-
-			time_set(time_s / 60, time_s % 60, (int) (time_count_ms % 1000));
-			time_handler.postDelayed(this, 0);
-		}
-	};
-
-	private View.OnClickListener tv_onClickListener = new View.OnClickListener() {
-		@Override
-		public void onClick(View v) {
-			if (point_isset) {
-				SwitchCompat s = findViewById(R.id.point_swt_isway);
-				point_set(s.isChecked(), v.getId());
-				map_startgoal();
-				robot_go();
-			}
-		}
-	};
-
 	protected void point_option() {
 		SwitchCompat s = findViewById(R.id.point_swt_isway);
 		if (s.isChecked()) {
@@ -1298,8 +1345,6 @@ public class MainActivity extends AppCompatActivity {
 	protected void point_toset() {
 		Enum.Instruction instruction = ((SwitchCompat) findViewById(R.id.point_swt_isway)).isChecked() ? Enum.Instruction.WAY : Enum.Instruction.ORIGIN;
 		if (point_isset && instruction == Enum.Instruction.WAY && point_way == -1) {
-			//new_message("Please select a cell");
-
 			point_isset = !point_isset;
 			findViewById(R.id.point_swt_isway).setEnabled(!point_isset);
 			((TextView) findViewById(R.id.point_btn_set)).setText(r_string(point_isset ? R.string.point_isset_true : R.string.point_isset_false));
@@ -1326,9 +1371,6 @@ public class MainActivity extends AppCompatActivity {
 
 	protected String point_set(boolean isway, int cell) {
 		if (isway) {
-			if (obst_list.containsKey(cell)) {
-				return new_message("Way point cannot be on an obstacle");
-			}
 			Drawable box;
 			if (point_way > -1) {
 				box = new_drawable(R.drawable.d_box, enum_getcolor(Integer.valueOf(view_string(grid_maze.findViewById(point_way)))));
@@ -1347,8 +1389,6 @@ public class MainActivity extends AppCompatActivity {
 				return new_message("Robot cannot be placed on the second-half");
 			} else if ((col > (MAZE_C - ROBOT_SIZE)) || (row > (MAZE_R - ROBOT_SIZE))) {
 				return new_message("Robot cannot move to that point");
-			} else if (robot_hit(new_cell)) {
-				return new_message("Robot will collide with obstacle");
 			} else {
 				point_robot = new_cell;
 				map_reset(false);
@@ -1509,20 +1549,6 @@ public class MainActivity extends AppCompatActivity {
 		map_startgoal();
 	}
 
-	protected void toggle_chat(boolean toggle) {
-		if (toggle) {
-			test_showchat = !test_showchat;
-		}
-		menu.findItem(R.id.menu_chat).setTitle(String.format("Chat: %s", String.valueOf(test_showchat)));
-
-		enable_layout(R.id.layout_direction);
-		findViewById(R.id.layout_tilt).setVisibility(test_showchat ? View.VISIBLE : View.INVISIBLE);
-		findViewById(R.id.layout_display).setVisibility(test_showchat ? View.VISIBLE : View.INVISIBLE);
-		findViewById(R.id.layout_config).setVisibility(test_showchat ? View.VISIBLE : View.INVISIBLE);
-
-		bt_checkpaired();
-	}
-
 	protected void msg_movements(boolean towrite, boolean tolist, Enum.Instruction instruction) {
 		if (instruction != null) {
 			boolean success = true;
@@ -1554,92 +1580,54 @@ public class MainActivity extends AppCompatActivity {
 		}
 	}
 
-	private View.OnClickListener onClickListener = new View.OnClickListener() {
-		public void onClick(View v) {
-
-			switch (v.getId()) {
-				//BLUETOOTH
-				case R.id.bt_swt_isrobust:
-					bt_robust_option();
-					break;
-
-				//ACCELEROMETER
-				case R.id.tilt_swt_ison:
-					tilt_option();
-					break;
-
-				//MAZE
-				case R.id.direction_btn_up:
-					msg_movements(true, true, Enum.Instruction.FORWARD);
-					break;
-				case R.id.direction_btn_down:
-					msg_movements(true, true, Enum.Instruction.REVERSE);
-					break;
-				case R.id.direction_btn_left:
-					msg_movements(true, true, Enum.Instruction.ROTATE_LEFT);
-					break;
-				case R.id.direction_btn_right:
-					msg_movements(true, true, Enum.Instruction.ROTATE_RIGHT);
-					break;
-				case R.id.direction_btn_calib:
-					msg_writemsg(Enum.Instruction.CALIBRATING.getText(), Enum.Instruction.CALIBRATING.getDescription());
-					break;
-
-				//STOPWATCH
-				case R.id.time_swt_isfastest:
-					time_option();
-					break;
-				case R.id.time_btn_start:
-					time_stopwatch();
-
-					if (!test_showchat) {//TODO:disable coordinates button
-						boolean t_isenable = ((Button) findViewById(R.id.time_btn_start)).getText().toString().equalsIgnoreCase(r_string(R.string.time_isstart_false));
-						findViewById(R.id.point_swt_isway).setEnabled(t_isenable);
-						findViewById(R.id.point_btn_set).setEnabled(t_isenable);
-					}
-					break;
-
-				//SET POINTS
-				case R.id.point_swt_isway:
-					point_option();
-					break;
-				case R.id.point_btn_set:
-					point_toset();
-
-					if (!test_showchat) {//TODO:disable timing button
-						boolean p_isenable = ((Button) findViewById(R.id.point_btn_set)).getText().toString().equalsIgnoreCase(r_string(R.string.point_isset_false));
-						findViewById(R.id.time_swt_isfastest).setEnabled(p_isenable);
-						findViewById(R.id.time_btn_start).setEnabled(p_isenable);
-					}
-					break;
-
-				//DISPLAY GRAPHICS
-				case R.id.display_swt_ismanual:
-					display_option();
-					break;
-				case R.id.display_btn_update:
-					display_update();
-					break;
-
-				//CONFIGURATIONS
-				case R.id.config_btn_f1:
-					if (test_showchat) {
-						msg_writemsg(config_getf1(true), r_string(R.string.config_f1));
-					} else {
-						new_message(config_getf1(true));
-					}
-					break;
-				case R.id.config_btn_f2:
-					if (test_showchat) {
-						msg_writemsg(config_getf1(false), r_string(R.string.config_f2));
-					} else {
-						new_message(config_getf1(false));
-					}
-					break;
-				case R.id.config_btn_reconfig:
-					dialog_config = pop_config().show();
-					break;
-			}
+	//DEVELOPER
+	protected void dev_toggle(boolean toggle) {
+		if (toggle) {
+			dev_showchat = !dev_showchat;
 		}
-	};
+
+		findViewById(R.id.layout_tilt).setVisibility(dev_showchat ? View.VISIBLE : View.INVISIBLE);
+		findViewById(R.id.layout_display).setVisibility(dev_showchat ? View.VISIBLE : View.INVISIBLE);
+		findViewById(R.id.layout_config).setVisibility(dev_showchat ? View.VISIBLE : View.INVISIBLE);
+
+		enable_layout(R.id.layout_direction);
+		bt_checkpaired();
+	}
+
+	protected AlertDialog.Builder pop_dev() {
+		View v = inflater.inflate(R.layout.pop_developer, null);
+		v.findViewById(R.id.dev_restart).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				reset_app();
+				dev_dialog.dismiss();
+			}
+		});
+		v.findViewById(R.id.dev_sensor).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				msg_writemsg("ar_g", "");
+				dev_dialog.dismiss();
+			}
+		});
+		v.findViewById(R.id.dev_crash).setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				msg_writemsg("al_crash", "");
+				dev_dialog.dismiss();
+			}
+		});
+
+		Button btn = (Button) v.findViewById(R.id.dev_chat);
+		btn.setText("chat :: " + String.valueOf(dev_showchat));
+		btn.setOnClickListener(new View.OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				dev_toggle(true);
+				dev_dialog.dismiss();
+			}
+		});
+
+		return new AlertDialog.Builder(this).setView(v);
+	}
 }

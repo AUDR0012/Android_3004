@@ -16,26 +16,11 @@
                             <entry key="launcher">
                               <value>
                                 <PersistentState>
-                                  <option name="children">
-                                    <map>
-                                      <entry key="foregroundImage">
-                                        <value>
-                                          <PersistentState>
-                                            <option name="values">
-                                              <map>
-                                                <entry key="scalingPercent" value="50" />
-                                              </map>
-                                            </option>
-                                          </PersistentState>
-                                        </value>
-                                      </entry>
-                                    </map>
-                                  </option>
                                   <option name="values">
                                     <map>
                                       <entry key="backgroundAssetType" value="COLOR" />
-                                      <entry key="backgroundColor" value="a0522d" />
-                                      <entry key="foregroundImage" value="C:\Users\AUDREY\Documents\GitHub\Android_3004\app\src\main\res\drawable\d_robot.xml" />
+                                      <entry key="backgroundColor" value="daa520" />
+                                      <entry key="foregroundImage" value="C:\Users\AUDREY\Documents\GitHub\Android_3004\app\src\main\res\drawable\ic_icon.xml" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -49,11 +34,6 @@
                 </map>
               </option>
             </PersistentState>
-          </value>
-        </entry>
-        <entry key="vectorWizard">
-          <value>
-            <PersistentState />
           </value>
         </entry>
       </map>

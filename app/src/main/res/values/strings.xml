@@ -9,6 +9,8 @@
 	<string name="_bracket_s">{</string>
 	<string name="_bracket_e">}</string>
 
+	<string name="developer">Developer</string>
+
 	<string name="menu_restart">Restart Map</string>
 
 	<string name="mdf_header">Map Descriptor String</string>

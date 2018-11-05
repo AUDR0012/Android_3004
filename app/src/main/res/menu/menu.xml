@@ -1,10 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:app="http://schemas.android.com/apk/res-auto">
-	<item
-		android:id="@+id/menu_restart"
-		android:title="@string/menu_restart"
-		app:showAsAction="collapseActionView" />
 
 	<item
 		android:id="@+id/menu_mdf"
@@ -17,17 +13,8 @@
 		app:showAsAction="collapseActionView" />
 
 	<item
-		android:id="@+id/menu_sensor"
-		android:title="arduino :: g"
-		app:showAsAction="collapseActionView" />
-
-	<item
-		android:id="@+id/menu_crash"
-		android:title="algorithm :: crash"
-		app:showAsAction="collapseActionView" />
-
-	<item
-		android:id="@+id/menu_chat"
+		android:id="@+id/menu_developer"
+		android:title="@string/developer"
 		app:showAsAction="collapseActionView" />
 
 
